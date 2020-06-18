@@ -1,0 +1,207 @@
+<div id="app">
+    <h1>手牌：{{ tehai }}</h1>
+    <h1>已用牌：{{ used }}</h1>
+    <h1>副露: {{ fuuro }}</h1>
+    <h1>面子: {{ menzu }}</h1>
+</div>
+
+<script src="https://unpkg.com/vue"></script>
+
+<script>
+    const type2size = {
+        "m": 9, //m for man
+        "p": 9, //p for pin
+        "s": 9, //s for so
+        "f": 4, //f for fu
+        "y": 3, //y for yaku
+    }
+    const type2base = {
+        "m": 0,
+        "p": 1,
+        "s": 2,
+        "f": 3,
+        "y": 4,
+    }
+    function Card(val, type) {
+        console.assert(type2size.hasOwnProperty(type), "type invalid");
+        console.assert(type != "f" && type != "y" || val != 0, "aka invalid");
+        console.assert(val >= 1 && val <= type2size[type], "value invalid");
+        this.value = val == 0 ? 5:val;
+        this.type = type;
+        this.aka = val == 0 ? true:false;
+        this.score = type2base[this.type]*10+this.value;
+    }
+    Card.prototype.name = function() {
+        if (this.aka == true) {
+            return "0"+this.type;
+        }
+        return this.value + this.type;
+    }
+
+    function Name(val, type) {
+        return val+type;
+    }
+
+    function Kezi(menzu) {
+        var len = menzu.length;
+        if (len < 3 || len > 4) {
+            return false;
+        }
+        for(let i=1, pre=menzu[i-1], cur=menzu[i];
+             i<len;
+             i++, pre=menzu[i-1], cur=menzu[i]) {
+                if(pre.score != cur.score) {
+                    return false;
+                }
+        }
+        return true;
+    }
+    
+    //should be sorted
+    function Shunzi(menzu) {
+        var len = menzu.length;
+        if (len!= 3) {
+            return false;
+        }
+        for (let i = 1, pre = menzu[i - 1], cur = menzu[i];
+            i < len;
+            i++ , pre = menzu[i - 1], cur = menzu[i]) {
+            if (pre.type != cur.type || pre.value+1 != cur.value) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    function IsDora(target, indicate) {
+        if(indicate.type != target.type) {
+            return false;
+        }
+        return indicate.value%type2size[indicate.type]+1 == target.value;
+    }
+
+    function Dora(indicate) {
+        return new Card(indicate.value%type2size[indicate.type]+1, indicate.type);
+    }
+
+    function CalcDoraCount(cardArr, doraScores) {
+        var total = 0;
+        for (let card in doraScores) {
+            if (doraScores[card.score]) {
+                total += doraScores[card.score];
+            }
+        }
+    }
+
+    var app = new Vue({
+        el: "#app",
+        data: {
+            cardInstances: {},
+            dora: [],
+            ura: [],
+            used: {},
+            akaUsed: {
+                "m": false,
+                "s": false,
+                "p": false,
+            },
+            tehai: [],
+            fuuro: [],
+            menzu: [],
+            tsumo: false,
+
+        },
+        created: function() {
+            for (let type in type2size) {
+                if (type == "m" || key == "p" || key == "s") {
+                    let instance = new Card(0, type);
+                    this.cardInstances[instance.name()] = instance;
+                }
+                let size = type2size[type];
+                for(let val=1; val<size; val++) {
+                    let instance = new Card(val, type);
+                    this.cardInstances[instance.name()] = instance;
+                }
+            }
+        },
+        computed: {
+            sortedTehai: function() {
+
+            },
+
+        },
+        methods: {
+            onClick: function(card, destArr) {
+                var score = card.score;
+                if (this.used[score] > 4) {
+                    alert("超出4张");
+                    return;
+                }
+                if (card.aka == true && this.akaUsed[card.type] == true) {
+                    alert("红宝牌已使用")
+                    return;
+                }
+                this.insertCard(card, destArr);
+                if (card.aka == true) {
+                    this.akaUsed[card.type] = true;
+                }
+                if (this.used.hasOwnProperty(score)) {
+                    this.used[score] += 1;
+                } else {
+                    this.used[score] = 1;
+                }
+            },
+
+            insertCard: function(card, destArr) {
+                for(var i = 0, len = destArr.length; i<len; i++) {
+                    if (destArr[i].score >= card.score) {
+                        break;
+                    }
+                }
+                destArr.splice(i, 0, card);
+            },
+
+            insertMenzu: function() {
+                if (!Kezi(this.menzu) && !Shunzi(this.menzu)) {
+                    alert("面子非法");
+                    return;
+                }
+                this.fuuro.push(this.menzu);
+                this.menzu = [];
+            },
+
+            doraCount: function(indicateArr) {
+                var doraScores = this.getDoraCardScores(indicateArr);
+                var total = 0;
+                total += CalcDoraCount(this.tehai, doraScores);
+                for(let menzu in this.fuuro) {
+                    total += CalcDoraCount(menzu, this.fuuro);
+                }
+                return total;
+            },     
+
+            getDoraCardScores: function(indicates) {
+                var targetCards = {};
+                for(let indicate in indicates) {
+                    let score = Dora(inidcate).score;
+                    targetCards[score] = targetCards[score] ? targetCards[score]+1:0;
+                }
+                return targetCards;
+            },
+
+            akaCount: function() {
+                var sum = 0;
+                for(let key in this.akaUsed) {
+                    if (this.akaUsed[key])
+                        sum++;
+                }                
+                return sum;
+            },
+
+            isMensen: function() {
+                return this.fuuro.length == 0;
+            }
+
+        }
+    })
+</script>
