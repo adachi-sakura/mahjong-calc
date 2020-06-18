@@ -38,6 +38,22 @@
         return this.value + this.type;
     }
 
+    function Menzu() {
+        this.shunzi = false;
+        this.kezi = false;
+        this.ura = false;
+        this.cards = [];
+    }
+
+    Menzu.prototype.generate = function(isUra) {
+        this.ura = isUra;
+        this.shunzi = Shunzi(this.cards);
+        this.kezi = Kezi(this.cards);
+        if(!this.shunzi && !this.kezi) {
+            throw "generation failed";
+        }
+    }
+
     function Name(val, type) {
         return val+type;
     }
@@ -107,7 +123,7 @@
             },
             tehai: [],
             fuuro: [],
-            menzu: [],
+            menzu: new Menzu(),
             tsumo: false,
 
         },
@@ -131,25 +147,46 @@
 
         },
         methods: {
-            onClick: function(card, destArr) {
-                var score = card.score;
-                if (this.used[score] > 4) {
+            onClick: function(card, destArr) {                
+                if (!this.checkUsed(card)) {
                     alert("超出4张");
                     return;
                 }
-                if (card.aka == true && this.akaUsed[card.type] == true) {
+                if (!this.checkAkaUsed(card)) {
                     alert("红宝牌已使用")
                     return;
                 }
+                if (!this.checkCardsNum()) {
+                    alert("手牌数量超出上限");
+                    return;
+                }
                 this.insertCard(card, destArr);
+                this.afterInsert(card);
+            },
+
+            afterInsert: function(card) {
+                var score = card.score;
                 if (card.aka == true) {
                     this.akaUsed[card.type] = true;
                 }
-                if (this.used.hasOwnProperty(score)) {
-                    this.used[score] += 1;
-                } else {
-                    this.used[score] = 1;
-                }
+                this.used[score] = this.used[score]? this.used[score]+1 : 1;
+            },
+
+            checkCardsNum: function() {
+                return this.tehai.length+this.fuuro.length*3 <= 14;
+            },
+
+            checkNewFuuroAvailable: function() {
+                return this.tehai.length+(this.fuuro.length+1)*3 <= 14;
+            },
+
+            checkUsed: function(card) {
+                var score = card.score;
+                return this.used[score] <= 4;
+            },
+
+            checkAkaUsed: function(card) {
+                return card.aka == false || this.akaUsed[card.type] == true;
             },
 
             insertCard: function(card, destArr) {
@@ -161,13 +198,20 @@
                 destArr.splice(i, 0, card);
             },
 
-            insertMenzu: function() {
-                if (!Kezi(this.menzu) && !Shunzi(this.menzu)) {
+            insertMenzu: function(isUraKan) {
+                try {
+                    this.menzu.generate(isUraKan);
+                }
+                catch (err) {
                     alert("面子非法");
                     return;
                 }
+                if (!this.checkNewFuuroAvailable()) {
+                    alert("牌数已达上限，无法加入新副露");
+                    return;
+                }
                 this.fuuro.push(this.menzu);
-                this.menzu = [];
+                this.menzu = new Menzu;
             },
 
             doraCount: function(indicateArr) {
