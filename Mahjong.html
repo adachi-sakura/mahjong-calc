@@ -25,7 +25,7 @@
     function Card(val, type) {
         console.assert(type2size.hasOwnProperty(type), "type invalid");
         console.assert(type != "f" && type != "y" || val != 0, "aka invalid");
-        console.assert(val >= 1 && val <= type2size[type], "value invalid");
+        console.assert(val >= 0 && val <= type2size[type], "value invalid");
         this.value = val == 0 ? 5:val;
         this.type = type;
         this.aka = val == 0 ? true:false;
@@ -134,7 +134,7 @@
                     this.cardInstances[instance.name()] = instance;
                 }
                 let size = type2size[type];
-                for(let val=1; val<size; val++) {
+                for(let val=1; val<=size; val++) {
                     let instance = new Card(val, type);
                     this.cardInstances[instance.name()] = instance;
                 }
