@@ -42,6 +42,7 @@
         this.shunzi = false;
         this.kezi = false;
         this.ura = false;
+        this.type = "";
         this.cards = [];
     }
 
@@ -52,6 +53,22 @@
         if(!this.shunzi && !this.kezi) {
             throw "generation failed";
         }
+        this.type = this.cards[0].type;
+    }
+
+    function Tokuten(fan, fu, isYakuman, isOya, isTsumo) {
+        this.fan = fan;
+        this.fu = fu;
+        this.isYakuman = isYakuman;
+        this.isOya = isOya;
+    }
+
+    function Yaku(name, fan, kuisagari, isYakuman, checkFunc) {
+        this.name = name;
+        this.fan = fan;
+        this.kuisagari = kuisagari;
+        this.isYakuman = isYakuman;
+        this.check = checkFunc;
     }
 
     function Name(val, type) {
@@ -96,6 +113,18 @@
         return indicate.value%type2size[indicate.type]+1 == target.value;
     }
 
+    function IsCharacterCard(card) {
+        return card.type == "f" || card.type == "y";
+    }
+
+    function IsCharacterType(type) {
+        return type == "f" || type == "y";
+    }
+
+    function Is19(card) {
+        return (card.value == 1 || card.value == 9) && !IsCharacterCard(card);
+    }
+
     function Dora(indicate) {
         return new Card(indicate.value%type2size[indicate.type]+1, indicate.type);
     }
@@ -121,15 +150,35 @@
                 "s": false,
                 "p": false,
             },
+            normalYakus: [],
+            yakumanYakus: [],
             tehai: [],
             fuuro: [],
+            ps: [],
+            ms: [],
+            ss: [],
+            fs: [],
+            ys: [],
             menzu: new Menzu(),
+            menzen: false,
+
+            jifu: null,
+            jofu: null,
+
             tsumo: false,
+            riichi: false,
+            wriichi: false,
+            ippatsu: false,
+            chankan: false,
+            haitei: false,
+            hotei: false,
+            tianho: false,
+            chiho: false,
 
         },
         created: function() {
             for (let type in type2size) {
-                if (type == "m" || key == "p" || key == "s") {
+                if (!IsCharacterType(type)) {
                     let instance = new Card(0, type);
                     this.cardInstances[instance.name()] = instance;
                 }
@@ -146,7 +195,41 @@
             },
 
         },
+        watch: {
+            fuuro: function(newFuroo, oldFuroo) {
+                this.menzen = this.isMenzen();
+            }
+        },
         methods: {
+            classify: function() {
+                this.ps = [];
+                this.ms = [];
+                this.ss = [];
+                this.fs = [];
+                this.ys = [];
+                this.tehai.forEach(card => {
+                    switch(card.type) {
+                        case "p":
+                            this.ps.push(card);
+                            break;
+                        case "m":
+                            this.ms.push(card);
+                            break;
+                        case "s":
+                            this.ss.push(card);
+                            break;
+                        case "f":
+                            this.fs.push(card);
+                            break;
+                        case "y":
+                            this.ys.push(card);
+                            break;
+                        default:
+                            throw("Unknown type: "+card.type);
+                    }
+                });
+            },
+
             onClick: function(card, destArr) {                
                 if (!this.checkUsed(card)) {
                     alert("超出4张");
@@ -242,10 +325,149 @@
                 return sum;
             },
 
-            isMensen: function() {
-                return this.fuuro.length == 0;
+            isMenzen: function() {
+                if (this.fuuro.length == 0) {
+                    return true;
+                }
+                this.fuuro.forEach(menzu => {
+                    if (menzu.ura == false) {
+                        return false;
+                    }
+                });
+                return true;
+            },
+
+            checkYakus: function() {
+                this.classify();
+                yakus = [];
+                var yakuCheckFunc = yaku => {
+                    if (yaku.check(this)) {
+                        yakus.push(yaku);
+                    }
+                };
+                try {
+                    this.yakumanYakus.forEach(yakuCheckFunc);
+                }
+                catch (err) {
+                    alert(err);
+                    return;
+                }                
+                if (yakus.length != 0) {
+                    return yakus;
+                }
+                try {
+                    this.normalYakus.forEach(yakuCheckFunc);
+                }
+                catch (err) {
+                    alert(err);
+                    return;
+                }
+                
+                return yakus;
             }
 
         }
     })
+
+    function checkRiichiYaku(ctx) {
+        if (!ctx.riichi) {
+            return false;
+        }
+        if (ctx.menzen) {
+            throw("必须在门清状态下立直");
+        }
+        if (ctx.wriichi) {
+            throw("无法与双立直同时生效");
+        }
+
+        return true;
+    }
+
+    function checkIppatsuYaku(ctx) {
+        if (!ctx.ippatsu) {
+            return false;
+        }
+        if (!ctx.riichi && !ctx.wriichi) {
+            throw("一发必须复合立直");
+        }
+        return true;
+    }
+
+    function checkMenzenTsumoYaku(ctx) {
+        return ctx.menzen && ctx.tsumo;
+    }
+
+    function checkPinhoYaku(ctx) {
+
+    }
+
+    function checkTanyaoYaku(ctx) {
+        var checkFunc = card => {
+            if (IsCharacterCard(card) || Is19(card)) {
+                return false;
+            }
+        };
+
+        for(let menzu in ctx.fuuro) {
+            for(let card in menzu) {
+                if (!checkFunc(card)) {
+                    return false;
+                }
+            }
+        }
+        for(let card in ctx.tehai) {
+            if(!checkFunc(card)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    function checkWRiichiYaku(ctx) {
+        if (!ctx.wriichi) {
+            return false;
+        }
+        if (ctx.menzen) {
+            throw ("必须在门清状态下双立直");
+        }
+        if (ctx.riichi) {
+            throw ("无法与立直同时生效");
+        }
+
+        return true;
+    }
+    
+    function checkHaiteiYaku(ctx) {
+        if (!ctx.haitei) {
+            return false;
+        }
+        if (!ctx.tsumo) {
+            throw("海底必须自摸");
+        }
+        return true;
+    }
+
+    function checkHoteiYaku(ctx) {
+        if (!ctx.hotei) {
+            return false;
+        }
+        if (ctx.tsumo) {
+            throw("河底无法自摸");
+        }
+        if (ctx.ippatsu) {
+            throw("河底无法复合一发");
+        }
+        return true;
+    }
+
+    function checkChankanYaku(ctx) {
+        if (!ctx.chankan) {
+            return false;
+        }
+        if (ctx.tsumo) {
+            throw("抢杠无法自摸");
+        }
+        return true;
+    }
+
 </script>
