@@ -140,11 +140,12 @@
 
     function CalcDoraCount(cardArr, doraScores) {
         var total = 0;
-        for (let card in doraScores) {
+        for (let card of cardArr) {
             if (doraScores[card.score]) {
                 total += doraScores[card.score];
             }
         }
+        return total;
     }
 
     var app = new Vue({
@@ -310,7 +311,7 @@
                 var doraScores = this.getDoraCardScores(indicateArr);
                 var total = 0;
                 total += CalcDoraCount(this.tehai, doraScores);
-                for(let menzu in this.fuuro) {
+                for(let menzu of this.fuuro) {
                     total += CalcDoraCount(menzu, this.fuuro);
                 }
                 return total;
@@ -318,7 +319,7 @@
 
             getDoraCardScores: function(indicates) {
                 var targetCards = {};
-                for(let indicate in indicates) {
+                for(let indicate of indicates) {
                     let score = Dora(inidcate).score;
                     targetCards[score] = targetCards[score] ? targetCards[score]+1:0;
                 }
@@ -338,11 +339,12 @@
                 if (this.fuuro.length == 0) {
                     return true;
                 }
-                this.fuuro.forEach(menzu => {
+                for(let menzu of this.fuuro) {
                     if (menzu.ura == false) {
                         return false;
                     }
-                });
+                }
+
                 return true;
             },
 
@@ -417,14 +419,14 @@
             }
         };
 
-        for(let menzu in ctx.fuuro) {
-            for(let card in menzu) {
+        for(let menzu of ctx.fuuro) {
+            for(let card of menzu) {
                 if (!checkFunc(card)) {
                     return false;
                 }
             }
         }
-        for(let card in ctx.tehai) {
+        for(let card of ctx.tehai) {
             if(!checkFunc(card)) {
                 return false;
             }
