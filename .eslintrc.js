@@ -16,5 +16,7 @@ module.exports = {
     'vue'
   ],
   rules: {
+    'no-trailing-spaces': 0, 
+    camelcase: 2
   }
 }
