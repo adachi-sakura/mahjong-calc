@@ -1,11 +1,20 @@
-<div id="app">
-    <h1>手牌：{{ tehai }}</h1>
-    <h1>已用牌：{{ used }}</h1>
-    <h1>副露: {{ fuuro }}</h1>
-    <h1>面子: {{ menzu }}</h1>
-</div>
+<html>
+    <head>
+        <h1>Mahjong Calculator</h1>
+    </head>
+    <body>
+        <div id="app">
+            <h1>手牌：{{ tehai }}</h1>
+            <h1>已用牌：{{ used }}</h1>
+            <h1>副露: {{ fuuro }}</h1>
+            <h1>面子: {{ menzu }}</h1>
+        </div>
+    </body>
+</html>
+
 
 <script src="https://unpkg.com/vue"></script>
+<script src="https://unpkg.com/lodash"></script>
 
 <script>
     const type2size = {
