@@ -479,4 +479,41 @@
         return true;
     }
 
+    function checkGokushiYaku(ctx) {
+        if(ctx.fuuro.length > 0) {
+            return false;
+        }
+        var set = new Set();
+        for(let card of ctx.tehai) {
+            if(!Is19(card) && !IsCharacterCard(card)) {
+                return false;
+            }
+            set.add(card.score);
+        }
+        if(set.size() != 12) {
+            return false;
+        }
+        var agariCard = ctx.agariCard;
+        return (Is19(agariCard) || IsCharacterCard(agariCard))
+                 && !set.has(agariCard.score);
+    }
+
+    function checkGokushiJusanmachiYaku(ctx) {
+        if(ctx.fuuro.length > 0) {
+            return false;
+        }
+        var set = new Set();
+        for(let card of ctx.tehai) {
+            if(!Is19(card) && ! IsCharacterCard(card)) {
+                return false;
+            }
+            set.add(card.score);
+        }
+        if(set.size() != 13) {
+            return false;
+        }
+        var agariCard = ctx.agariCard;
+        return Is19(agariCard) || IsCharacterCard(agariCard);
+    }
+
 </script>
