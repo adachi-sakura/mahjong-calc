@@ -556,16 +556,31 @@
             },
 
             testParse: function() {
-                var arr = ["1s", "1s", "1s", "3s", "3s"];
+                var arr = ["1s", "1s", "2s", "2s", "3s", "4s", "4s", "5s", "5s", "6s", "6s", "7s", "7s"];
                 var agari = "3s";
                 var agariCard = this.cardInstances[agari];
                 var cards = [];
                 arr.forEach(name => cards.push(this.cardInstances[name]));
                 var res = GenerateCompositions(cards, agariCard);
-                console.log(JSON.stringify(res, null , '\t'));
+                var fun = function (arr) {
+                    let str = '';
+                    for (let elem of arr) {
+                        str += elem.name();
+                    }
+                    return str;
+                };
+                for(let comp of res) {
+                    for(let mz of comp.menzus) {
+                        console.log(fun(mz));
+                    }
+                    for(let dz of comp.duizis) {
+                        console.log(fun(dz));
+                    }
+                    console.log('last dazi: '+fun(comp.lastDazi));
+                }
+                //console.log(JSON.stringify(res, null , '\t'));
             },
             
-
         }
     })
 
