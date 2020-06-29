@@ -44,29 +44,29 @@
     console.assert(type2size.hasOwnProperty(type), 'type invalid')
     console.assert((type != 'f' && type != 'y') || val != 0, 'aka invalid')
     console.assert(val >= 0 && val <= type2size[type], 'value invalid')
-    this.value = val == 0 ? 5 : val
+    this.value = val === 0 ? 5 : val
     this.type = type
-    this.aka = val == 0 ? true : false
+    this.aka = val === 0 ? true : false
     this.score = type2base[this.type] * 10 + this.value
   }
 
   Card.prototype.name = function () {
-    if (this.aka == true) {
+    if (this.aka === true) {
       return '0' + this.type
     }
     return this.value + this.type
   }
 
   Card.prototype.equal = function (card) {
-    return card && this.score == card.score
+    return card && this.score === card.score
   }
 
   Card.prototype.IsPrev = function (card) {
-    return card && this.type == card.type && this.value + 1 == card.value
+    return card && this.type === card.type && this.value + 1 === card.value
   }
 
   Card.prototype.IsNext = function (card) {
-    return card && this.type == card.type && this.value - 1 == card.value
+    return card && this.type === card.type && this.value - 1 === card.value
   }
 
   function Menzu() {
@@ -165,7 +165,7 @@
     ]
     for (let judgeFunc of judgeFuncs) {
       let type = judgeFunc(lastDazi, agari)
-      if (type !== AgariType.Unknown) {
+      if (type !=== AgariType.Unknown) {
         return type
       }
     }
@@ -181,7 +181,7 @@
     } else if (
       (_.first(lastDazi).value =
         (1 && _.last(lastDazi).equal(agari)) ||
-        (_.last(lastDazi).value == type2size[_.last(lastDazi).type] &&
+        (_.last(lastDazi).value === type2size[_.last(lastDazi).type] &&
           _.first(lastDazi).equal(agari)))
     ) {
       return AgariType.DanBian
@@ -255,14 +255,14 @@
 
   function ParseToComposition(ctx, data, compositions) {
     // console.assert(ctx.cur <= data.cards.length, 'ctx cur invalid')
-    if (ctx.cardsRemain.length == 0) {
+    if (ctx.cardsRemain.length === 0) {
       compositions.push(ctx.composition)
       return
     }
     var funcs = [ParseFirstKezi, ParseFirstShunzi, ParseFirstDuizi]
     for (let parseFunc of funcs) {
       var newDazi = parseFunc(ctx.cardsRemain)
-      if (newDazi.length == 0) {
+      if (newDazi.length === 0) {
         continue
       }
       var newCtxs = CreateNewParseCtx(ctx, data, newDazi)
@@ -285,7 +285,7 @@
     _.remove(newCtx.cardsRemain, function (card) {
       if (map.get(card.score)) {
         let cnt = map.get(card.score) - 1
-        map.set(card.score, cnt == 0 ? undefined : cnt)
+        map.set(card.score, cnt === 0 ? undefined : cnt)
         return true
       }
       return false
@@ -303,7 +303,7 @@
   }
 
   function NewCompositions(ctx, data, newDazi) {
-    console.assert(newDazi.length == 2 || newDazi.length == 3)
+    console.assert(newDazi.length === 2 || newDazi.length === 3)
     var comp = ctx.composition
     switch (newDazi.length) {
       case 3:
@@ -315,12 +315,12 @@
     }
     if (
       comp.lastDazi.length != 0 ||
-      newDazi.find((elem) => elem.score == data.agariCard.score) == undefined
+      newDazi.find((elem) => elem.score === data.agariCard.score) == undefined
     ) {
       return [comp]
     }
     if (
-      ctx.usedDict[data.agariCard.score] == data.countDict[data.agariCard.score]
+      ctx.usedDict[data.agariCard.score] === data.countDict[data.agariCard.score]
     ) {
       comp.lastDazi = newDazi
       return [comp]
@@ -331,13 +331,13 @@
   }
 
   //   function NewPosition(ctx, data, newDazi) {
-  //     console.assert(newDazi.length == 2 || newDazi.length == 3)
+  //     console.assert(newDazi.length === 2 || newDazi.length === 3)
   //     var curCard = data.cards[ctx.cur]
   //     var newPos = ctx.cur
-  //     if (newDazi.length == 2) {
+  //     if (newDazi.length === 2) {
   //       newPos += 2
   //     } else {
-  //       if (newDazi[1].score == curCard.score) {
+  //       if (newDazi[1].score === curCard.score) {
   //         newPos += 3
   //       } else {
   //         newPos += 1
@@ -425,9 +425,9 @@
     //   if (curCard.type != preCard.type) {
     //     return []
     //   }
-    //   if (curCard.value == preCard.value + 1) {
+    //   if (curCard.value === preCard.value + 1) {
     //     shunziCards.push(curCard)
-    //     if (shunziCards.length == 3) {
+    //     if (shunziCards.length === 3) {
     //       return shunziCards
     //     }
     //     preCard = curCard
@@ -471,19 +471,19 @@
     if (indicate.type != target.type) {
       return false
     }
-    return (indicate.value % type2size[indicate.type]) + 1 == target.value
+    return (indicate.value % type2size[indicate.type]) + 1 === target.value
   }
 
   function IsCharacterCard(card) {
-    return card.type == 'f' || card.type == 'y'
+    return card.type === 'f' || card.type === 'y'
   }
 
   function IsCharacterType(type) {
-    return type == 'f' || type == 'y'
+    return type === 'f' || type === 'y'
   }
 
   function Is19(card) {
-    return (card.value == 1 || card.value == 9) && !IsCharacterCard(card)
+    return (card.value === 1 || card.value === 9) && !IsCharacterCard(card)
   }
 
   function Dora(indicate) {
@@ -612,7 +612,7 @@
 
       afterInsert: function (card) {
         var score = card.score
-        if (card.aka == true) {
+        if (card.aka === true) {
           this.akaUsed[card.type] = true
         }
         this.used[score] = this.used[score] ? this.used[score] + 1 : 1
@@ -632,7 +632,7 @@
       },
 
       checkAkaUsed: function (card) {
-        return card.aka == false || this.akaUsed[card.type] == true
+        return card.aka === false || this.akaUsed[card.type] === true
       },
 
       insertMenzu: function (isUraKan) {
@@ -678,11 +678,11 @@
       },
 
       isMenzen: function () {
-        if (this.fuuro.length == 0) {
+        if (this.fuuro.length === 0) {
           return true
         }
         for (let menzu of this.fuuro) {
-          if (menzu.ura == false) {
+          if (menzu.ura === false) {
             return false
           }
         }
@@ -909,7 +909,7 @@
   function checkGokushiJusanmachiYakuWithTenho(ctx) {
     return (
       checkGokushiJusanmachiYaku(ctx) ||
-      (checkGokushiYaku(ctx) && ctx.tenho == true)
+      (checkGokushiYaku(ctx) && ctx.tenho === true)
     )
   }
 </script>
