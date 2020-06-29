@@ -58,7 +58,15 @@
   }
 
   Card.prototype.equal = function (card) {
-    return this.score == card.score
+    return card && this.score == card.score
+  }
+
+  Card.prototype.IsPrev = function (card) {
+    return card && this.type == card.type && this.value + 1 == card.value
+  }
+
+  Card.prototype.IsNext = function (card) {
+    return card && this.type == card.type && this.value - 1 == card.value
   }
 
   function Menzu() {
@@ -235,7 +243,8 @@
       countDict: countDict,
     }
     var ctx = {
-      cur: 0,
+      //cur: 0,
+      cardsRemain: _.cloneDeep(cards),
       composition: new Composition(),
       usedDict: usedDict,
     }
@@ -245,14 +254,14 @@
   }
 
   function ParseToComposition(ctx, data, compositions) {
-    console.assert(ctx.cur <= data.cards.length, 'ctx cur invalid')
-    if (ctx.cur == data.cards.length) {
+    // console.assert(ctx.cur <= data.cards.length, 'ctx cur invalid')
+    if (ctx.cardsRemain.length == 0) {
       compositions.push(ctx.composition)
       return
     }
-    var funcs = [ParseKezi, ParseShunzi, ParseDuizi]
+    var funcs = [ParseFirstKezi, ParseFirstShunzi, ParseFirstDuizi]
     for (let parseFunc of funcs) {
-      var newDazi = parseFunc(ctx, data)
+      var newDazi = parseFunc(ctx.cardsRemain)
       if (newDazi.length == 0) {
         continue
       }
@@ -267,8 +276,23 @@
     var newCtxs = []
     var newCtx = _.cloneDeep(ctx)
 
+    var map = new Map()
+    for (let card of newDazi) {
+      let score = card.score
+      map.set(score, map.has(score) ? map.get(score) + 1 : 1)
+    }
+
+    _.remove(newCtx.cardsRemain, function (card) {
+      if (map.get(card.score)) {
+        let cnt = map.get(card.score) - 1
+        map.set(card.score, cnt == 0 ? undefined : cnt)
+        return true
+      }
+      return false
+    })
+
     newDazi.forEach((card) => newCtx.usedDict[card.score]++)
-    newCtx.cur = NewPosition(newCtx, data, newDazi)
+    //newCtx.cur = NewPosition(newCtx, data, newDazi)
     var compositions = NewCompositions(newCtx, data, newDazi)
     for (let comp of compositions) {
       let c = _.cloneDeep(newCtx)
@@ -306,79 +330,141 @@
     return [comp, comp2]
   }
 
-  function NewPosition(ctx, data, newDazi) {
-    console.assert(newDazi.length == 2 || newDazi.length == 3)
-    var curCard = data.cards[ctx.cur]
-    var newPos = ctx.cur
-    if (newDazi.length == 2) {
-      newPos += 2
-    } else {
-      if (newDazi[1].score == curCard.score) {
-        newPos += 3
-      } else {
-        newPos += 1
-      }
-    }
-    if (ctx.usedDict[curCard.score] < data.countDict[curCard.score]) {
-      return newPos
-    }
-    while (newPos < data.cards.length) {
-      let card = data.cards[newPos]
-      newPos += ctx.usedDict[card.score]
-      if (ctx.usedDict[card.score] < data.countDict[card.score]) {
-        break
-      }
-    }
-    return newPos
+  //   function NewPosition(ctx, data, newDazi) {
+  //     console.assert(newDazi.length == 2 || newDazi.length == 3)
+  //     var curCard = data.cards[ctx.cur]
+  //     var newPos = ctx.cur
+  //     if (newDazi.length == 2) {
+  //       newPos += 2
+  //     } else {
+  //       if (newDazi[1].score == curCard.score) {
+  //         newPos += 3
+  //       } else {
+  //         newPos += 1
+  //       }
+  //     }
+  //     if (ctx.usedDict[curCard.score] < data.countDict[curCard.score]) {
+  //       return newPos
+  //     }
+  //     while (newPos < data.cards.length) {
+  //       let card = data.cards[newPos]
+  //       newPos += ctx.usedDict[card.score]
+  //       if (ctx.usedDict[card.score] < data.countDict[card.score]) {
+  //         break
+  //       }
+  //     }
+  //     return newPos
+  //   }
+
+  function CardsStatus(cards, tempCur = 0) {
+    this.cards = cards
+    this.tempCur = Math.min(tempCur, this.cards.length)
   }
 
-  function ParseKezi(ctx, data) {
-    var keziCards = []
-    try {
-      if (
-        data.cards[ctx.cur].equal(data.cards[ctx.cur + 1]) &&
-        data.cards[ctx.cur].equal(data.cards[ctx.cur + 2])
-      ) {
-        keziCards.push(data.cards[ctx.cur])
-        keziCards.push(data.cards[ctx.cur + 1])
-        keziCards.push(data.cards[ctx.cur + 2])
-      }
-    } catch (err) {
-    } finally {
-      return keziCards
+  CardsStatus.prototype.Card = function () {
+    if (this.tempCur >= this.cards.length) {
+      return null
     }
+    return this.cards[this.tempCur]
   }
 
-  function ParseShunzi(ctx, data) {
-    var shunziCards = []
-    var preCard = data.cards[ctx.cur]
-    shunziCards.push(preCard)
-    for (let pos = ctx.cur + 1; pos < data.cards.length; pos++) {
-      let curCard = data.cards[pos]
-      if (curCard.type != preCard.type) {
-        return []
-      }
-      if (curCard.value == preCard.value + 1) {
-        shunziCards.push(curCard)
-        if (shunziCards.length == 3) {
-          return shunziCards
-        }
-        preCard = curCard
-      }
+  CardsStatus.prototype.at = function (idx) {
+    if (idx >= this.cards.length) {
+      return null
+    }
+    return this.cards[idx]
+  }
+
+  CardsStatus.prototype.Next = function () {
+    return new CardsStatus(this.cards, this.tempCur + 1)
+  }
+
+  CardsStatus.prototype.NextDifferent = function () {
+    var cur = this.tempCur
+    var anchor = this.Card()
+    while (cur < this.cards.length && anchor.equal(this.at(cur))) {
+      cur++
+    }
+    return new CardsStatus(this.cards, cur)
+  }
+
+  function ParseFirstKezi(cardsRemain) {
+    // try {
+    //   if (
+    //     data.cards[ctx.cur].equal(data.cards[ctx.cur + 1]) &&
+    //     data.cards[ctx.cur].equal(data.cards[ctx.cur + 2])
+    //   ) {
+    //     keziCards.push(data.cards[ctx.cur])
+    //     keziCards.push(data.cards[ctx.cur + 1])
+    //     keziCards.push(data.cards[ctx.cur + 2])
+    //   }
+    // } catch (err) {
+    // } finally {
+    //   return keziCards
+    // }
+    var status = new CardsStatus(cardsRemain)
+    var nStatus = status.Next()
+    var nnStatus = nStatus.Next()
+    var [curCard, nCard, nnCard] = [
+      status.Card(),
+      nStatus.Card(),
+      nnStatus.Card(),
+    ]
+    if (curCard && curCard.equal(nCard) && nCard.equal(nnCard)) {
+      return [curCard, nCard, nnCard]
     }
     return []
   }
 
-  function ParseDuizi(ctx, data, compositions) {
-    var duiziCards = []
-    try {
-      if (data.cards[ctx.cur].equal(data.cards[ctx.cur + 1])) {
-        duiziCards.push(data.cards[ctx.cur])
-        duiziCards.push(data.cards[ctx.cur + 1])
-      }
-    } finally {
-      return duiziCards
+  function ParseFirstShunzi(cardsRemain) {
+    // var shunziCards = []
+    // var preCard = data.cards[ctx.cur]
+    // shunziCards.push(preCard)
+    // for (let pos = ctx.cur + 1; pos < data.cards.length; pos++) {
+    //   let curCard = data.cards[pos]
+    //   if (curCard.type != preCard.type) {
+    //     return []
+    //   }
+    //   if (curCard.value == preCard.value + 1) {
+    //     shunziCards.push(curCard)
+    //     if (shunziCards.length == 3) {
+    //       return shunziCards
+    //     }
+    //     preCard = curCard
+    //   }
+    // }
+    var status = new CardsStatus(cardsRemain)
+    var nStatus = status.NextDifferent()
+    var nnStatus = nStatus.NextDifferent()
+    var [curCard, nCard, nnCard] = [
+      status.Card(),
+      nStatus.Card(),
+      nnStatus.Card(),
+    ]
+    if (curCard && curCard.IsPrev(nCard) && nCard.IsPrev(nnCard)) {
+      return [curCard, nCard, nnCard]
     }
+    return []
+  }
+
+  function ParseFirstDuizi(cardsRemain) {
+    // var duiziCards = []
+    // try {
+    //   if (data.cards[ctx.cur].equal(data.cards[ctx.cur + 1])) {
+    //     duiziCards.push(data.cards[ctx.cur])
+    //     duiziCards.push(data.cards[ctx.cur + 1])
+    //   }
+    // } catch (err) {
+    // } finally {
+    //   return duiziCards
+    // }
+    var status = new CardsStatus(cardsRemain)
+    var nStatus = status.Next()
+    var [curCard, nCard] = [status.Card(), nStatus.Card()]
+    if (curCard && curCard.equal(nCard)) {
+      return [curCard, nCard]
+    }
+    return []
   }
 
   function IsDora(target, indicate) {
@@ -635,26 +721,31 @@
         return yakus
       },
 
-      testParse: function () {
+      testCardsArr: function () {
         var arr = [
           '1s',
           '1s',
-          '2s',
+          '1s',
           '2s',
           '3s',
           '4s',
-          '4s',
-          '5s',
           '5s',
           '6s',
-          '6s',
           '7s',
-          '7s',
+          '8s',
+          '9s',
+          '9s',
+          '9s',
         ]
-        var agari = '3s'
-        var agariCard = this.cardInstances[agari]
         var cards = []
         arr.forEach((name) => cards.push(this.cardInstances[name]))
+        return cards
+      },
+
+      testParse: function () {
+        var agari = '3s'
+        var agariCard = this.cardInstances[agari]
+        var cards = this.testCardsArr()
         var res = GenerateCompositions(cards, agariCard)
         var fun = function (arr) {
           let str = ''
