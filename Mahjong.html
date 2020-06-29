@@ -724,4 +724,8 @@
         return Is19(agariCard) || IsCharacterCard(agariCard);
     }
 
+    function checkGokushiJusanmachiYakuWithTenho(ctx) {
+        return checkGokushiJusanmachiYaku(ctx) || (checkGokushiYaku(ctx) && ctx.tenho == true);
+    }
+
 </script>
