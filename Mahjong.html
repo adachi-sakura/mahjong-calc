@@ -329,6 +329,18 @@
     return [comp, comp2]
   }
 
+  function FilterCompositions(comps) {
+    var set = new Set()
+    _.remove(comps, function (comp) {
+      let json = JSON.stringify(comp)
+      if (set.has(json)) {
+        return true
+      }
+      set.add(json)
+      return false
+    })
+  }
+
   //   function NewPosition(ctx, data, newDazi) {
   //     console.assert(newDazi.length === 2 || newDazi.length === 3)
   //     var curCard = data.cards[ctx.cur]
