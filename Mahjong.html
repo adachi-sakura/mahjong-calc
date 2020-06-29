@@ -248,28 +248,27 @@
       composition: new Composition(),
       usedDict: usedDict,
     }
-    var compositions = []
-    ParseToComposition(ctx, data, compositions)
-    return compositions
+    return ParseToComposition(ctx, data)
   }
 
-  function ParseToComposition(ctx, data, compositions) {
+  function ParseToComposition(ctx, data) {
     // console.assert(ctx.cur <= data.cards.length, 'ctx cur invalid')
     if (ctx.cardsRemain.length === 0) {
-      compositions.push(ctx.composition)
-      return
+      return [ctx.composition]
     }
     var funcs = [ParseFirstKezi, ParseFirstShunzi, ParseFirstDuizi]
+    var comps = []
     for (let parseFunc of funcs) {
-      var newDazi = parseFunc(ctx.cardsRemain)
+      let newDazi = parseFunc(ctx.cardsRemain)
       if (newDazi.length === 0) {
         continue
       }
-      var newCtxs = CreateNewParseCtx(ctx, data, newDazi)
-      newCtxs.forEach((newCtx) =>
-        ParseToComposition(newCtx, data, compositions)
+      let newCtxs = CreateNewParseCtx(ctx, data, newDazi)
+      newCtxs.forEach(
+        (newCtx) => (comps = comps.concat(ParseToComposition(newCtx, data)))
       )
     }
+    return comps
   }
 
   function CreateNewParseCtx(ctx, data, newDazi) {
@@ -763,6 +762,7 @@
           }
           console.log('last dazi: ' + fun(comp.lastDazi))
         }
+        return res
         //console.log(JSON.stringify(res, null , '\t'));
       },
     },
