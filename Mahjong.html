@@ -1,796 +1,824 @@
 <html>
-    <head>
-        <h1>Mahjong Calculator</h1>
-    </head>
-    <body>
-        <div id="app">
-            <h1>手牌：{{ tehai }}</h1>
-            <h1>已用牌：{{ used }}</h1>
-            <h1>副露: {{ fuuro }}</h1>
-            <h1>面子: {{ menzu }}</h1>
-        </div>
-    </body>
+  <head>
+    <h1>Mahjong Calculator</h1>
+  </head>
+  <body>
+    <div id="app">
+      <h1>手牌：{{ tehai }}</h1>
+      <h1>已用牌：{{ used }}</h1>
+      <h1>副露: {{ fuuro }}</h1>
+      <h1>面子: {{ menzu }}</h1>
+    </div>
+  </body>
 </html>
 
 <script src="https://unpkg.com/vue"></script>
 <script src="https://unpkg.com/lodash"></script>
 
 <script>
-    const type2size = {
-        "m": 9, //m for man
-        "p": 9, //p for pin
-        "s": 9, //s for so
-        "f": 4, //f for fu
-        "y": 3, //y for yaku
-    }
-    const type2base = {
-        "m": 0,
-        "p": 1,
-        "s": 2,
-        "f": 3,
-        "y": 4,
-    }
+  const type2size = {
+    m: 9, //m for man
+    p: 9, //p for pin
+    s: 9, //s for so
+    f: 4, //f for fu
+    y: 3, //y for yaku
+  }
+  const type2base = {
+    m: 0,
+    p: 1,
+    s: 2,
+    f: 3,
+    y: 4,
+  }
 
-    const AgariType = {
-        LiangMian:  0,
-        QianZhang:  1,
-        BianZhang:  2,
-        DuiPeng:    3,
-        DanQi:      4,
-        Unknown:    5,
+  const AgariType = {
+    LiangMian: 0,
+    QianZhang: 1,
+    BianZhang: 2,
+    DuiPeng: 3,
+    DanQi: 4,
+    Unknown: 5,
+  }
+
+  function Card(val, type) {
+    console.assert(type2size.hasOwnProperty(type), 'type invalid')
+    console.assert((type != 'f' && type != 'y') || val != 0, 'aka invalid')
+    console.assert(val >= 0 && val <= type2size[type], 'value invalid')
+    this.value = val == 0 ? 5 : val
+    this.type = type
+    this.aka = val == 0 ? true : false
+    this.score = type2base[this.type] * 10 + this.value
+  }
+
+  Card.prototype.name = function () {
+    if (this.aka == true) {
+      return '0' + this.type
     }
+    return this.value + this.type
+  }
 
-    function Card(val, type) {
-        console.assert(type2size.hasOwnProperty(type), "type invalid");
-        console.assert(type != "f" && type != "y" || val != 0, "aka invalid");
-        console.assert(val >= 0 && val <= type2size[type], "value invalid");
-        this.value = val == 0 ? 5:val;
-        this.type = type;
-        this.aka = val == 0 ? true:false;
-        this.score = type2base[this.type]*10+this.value;
+  Card.prototype.equal = function (card) {
+    return this.score == card.score
+  }
+
+  function Menzu() {
+    this.shunzi = false
+    this.kezi = false
+    this.ura = false
+    this.type = ''
+    this.cards = []
+  }
+
+  Menzu.prototype.generate = function (isUra) {
+    this.ura = isUra
+    this.shunzi = Shunzi(this.cards)
+    this.kezi = Kezi(this.cards)
+    if (!this.shunzi && !this.kezi) {
+      throw 'generation failed'
     }
+    this.type = this.cards[0].type
+  }
 
-    Card.prototype.name = function() {
-        if (this.aka == true) {
-            return "0"+this.type;
-        }
-        return this.value + this.type;
+  function Tokuten(fan, fu, isYakuman, isOya, isTsumo) {
+    this.fan = fan
+    this.fu = fu
+    this.isYakuman = isYakuman
+    this.isOya = isOya
+  }
+
+  function Yaku(name, fan, kuisagari, isYakuman, checkFunc) {
+    this.name = name
+    this.fan = fan
+    this.kuisagari = kuisagari
+    this.isYakuman = isYakuman
+    this.check = checkFunc
+  }
+
+  function Composition() {
+    this.menzus = []
+    this.duizis = []
+    this.lastDazi = []
+  }
+
+  function Name(val, type) {
+    return val + type
+  }
+
+  function Kezi(menzu) {
+    var len = menzu.length
+    if (len < 3 || len > 4) {
+      return false
     }
-
-    Card.prototype.equal = function(card) {
-        return this.score == card.score;
+    for (
+      let i = 1, pre = menzu[i - 1], cur = menzu[i];
+      i < len;
+      i++, pre = menzu[i - 1], cur = menzu[i]
+    ) {
+      if (pre.score != cur.score) {
+        return false
+      }
     }
+    return true
+  }
 
-    function Menzu() {
-        this.shunzi = false;
-        this.kezi = false;
-        this.ura = false;
-        this.type = "";
-        this.cards = [];
+  //should be sorted
+  function Shunzi(menzu) {
+    var len = menzu.length
+    if (len != 3) {
+      return false
     }
-
-    Menzu.prototype.generate = function(isUra) {
-        this.ura = isUra;
-        this.shunzi = Shunzi(this.cards);
-        this.kezi = Kezi(this.cards);
-        if(!this.shunzi && !this.kezi) {
-            throw "generation failed";
-        }
-        this.type = this.cards[0].type;
+    for (
+      let i = 1, pre = menzu[i - 1], cur = menzu[i];
+      i < len;
+      i++, pre = menzu[i - 1], cur = menzu[i]
+    ) {
+      if (pre.type != cur.type || pre.value + 1 != cur.value) {
+        return false
+      }
     }
+    return true
+  }
 
-    function Tokuten(fan, fu, isYakuman, isOya, isTsumo) {
-        this.fan = fan;
-        this.fu = fu;
-        this.isYakuman = isYakuman;
-        this.isOya = isOya;
-    }
-
-    function Yaku(name, fan, kuisagari, isYakuman, checkFunc) {
-        this.name = name;
-        this.fan = fan;
-        this.kuisagari = kuisagari;
-        this.isYakuman = isYakuman;
-        this.check = checkFunc;
-    }
-
-    function Composition() {
-        this.menzus = [];
-        this.duizis = [];
-        this.lastDazi = [];
-    }
-
-    function Name(val, type) {
-        return val+type;
-    }
-
-    function Kezi(menzu) {
-        var len = menzu.length;
-        if (len < 3 || len > 4) {
-            return false;
-        }
-        for(let i=1, pre=menzu[i-1], cur=menzu[i];
-             i<len;
-             i++, pre=menzu[i-1], cur=menzu[i]) {
-                if(pre.score != cur.score) {
-                    return false;
-                }
-        }
-        return true;
-    }
-
-    //should be sorted
-    function Shunzi(menzu) {
-        var len = menzu.length;
-        if (len!= 3) {
-            return false;
-        }
-        for (let i = 1, pre = menzu[i - 1], cur = menzu[i];
-            i < len;
-            i++ , pre = menzu[i - 1], cur = menzu[i]) {
-            if (pre.type != cur.type || pre.value+1 != cur.value) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    function Duizi(dazi) {
-        var len = dazi.length;
-        if (len != 2) {
-            return false;
-        }
-
-        return dazi[0].equal(dazi[1]);
-    }
-
-    //sorted need
-    function JudgeAgariType(lastDazi, agari) {
-        var judgeFuncs = [JudgeShunziAgariType, JudgeKeziAgariType, JudgeDuiziAgariType];
-        for (let judgeFunc of judgeFuncs) {
-            let type = judgeFunc(lastDazi, agari);
-            if (type !== AgariType.Unknown) {
-                return type;
-            }
-        }
-        return AgariType.Unknown;
+  function Duizi(dazi) {
+    var len = dazi.length
+    if (len != 2) {
+      return false
     }
 
-    function JudgeShunziAgariType(lastDazi, agari) {
-        if (!Shunzi(lastDazi)) {
-            return AgariType.Unknown;
-        }
-        if (lastDazi[1].equal(agari)) {
-            return AgariType.QianZhang;
-        } else if ( _.first(lastDazi).value = 1 && _.last(lastDazi).equal(agari) 
-                    || _.last(lastDazi).value == type2size[_.last(lastDazi).type] 
-                    && _.first(lastDazi).equal(agari) ) {
-            return AgariType.DanBian;
-        } else if ( _.first(lastDazi).equal(agari) || _.last(lastDazi).equal(agari)) {
-            return AgariType.LiangMian;
-        }
-        return AgariType.Unknown;
+    return dazi[0].equal(dazi[1])
+  }
+
+  //sorted need
+  function JudgeAgariType(lastDazi, agari) {
+    var judgeFuncs = [
+      JudgeShunziAgariType,
+      JudgeKeziAgariType,
+      JudgeDuiziAgariType,
+    ]
+    for (let judgeFunc of judgeFuncs) {
+      let type = judgeFunc(lastDazi, agari)
+      if (type !== AgariType.Unknown) {
+        return type
+      }
+    }
+    return AgariType.Unknown
+  }
+
+  function JudgeShunziAgariType(lastDazi, agari) {
+    if (!Shunzi(lastDazi)) {
+      return AgariType.Unknown
+    }
+    if (lastDazi[1].equal(agari)) {
+      return AgariType.QianZhang
+    } else if (
+      (_.first(lastDazi).value =
+        (1 && _.last(lastDazi).equal(agari)) ||
+        (_.last(lastDazi).value == type2size[_.last(lastDazi).type] &&
+          _.first(lastDazi).equal(agari)))
+    ) {
+      return AgariType.DanBian
+    } else if (
+      _.first(lastDazi).equal(agari) ||
+      _.last(lastDazi).equal(agari)
+    ) {
+      return AgariType.LiangMian
+    }
+    return AgariType.Unknown
+  }
+
+  function JudgeKeziAgariType(lastDazi, agari) {
+    if (!Kezi(lastDazi)) {
+      return AgariType.Unknown
+    }
+    if (_.first(lastDazi).equal(agari)) {
+      return AgariType.DuiPeng
+    }
+    return AgariType.Unknown
+  }
+
+  function JudgeDuiziAgariType(lastDazi, agari) {
+    if (!Duizi(lastDazi)) {
+      return AgariType.Unknown
+    }
+    if (_.first(lastDazi).equal(agari)) {
+      return AgariType.DanQi
+    }
+    return AgariType.Unknown
+  }
+
+  function InsertCard(card, destArr) {
+    for (var i = 0, len = destArr.length; i < len; i++) {
+      if (destArr[i].score >= card.score) {
+        break
+      }
+    }
+    destArr.splice(i, 0, card)
+  }
+
+  function GenerateCompositions(tehai, agariCard) {
+    var cards = _.clone(tehai)
+    InsertCard(agariCard, cards)
+    var countDict = {}
+    for (let card of cards) {
+      countDict[card.score] = countDict[card.score]
+        ? countDict[card.score] + 1
+        : 1
+    }
+    var usedDict = {}
+    for (let key in countDict) {
+      usedDict[key] = 0
     }
 
-    function JudgeKeziAgariType(lastDazi, agari) {
-        if (!Kezi(lastDazi)) {
-            return AgariType.Unknown;
-        }
-        if (_.first(lastDazi).equal(agari)) {
-            return AgariType.DuiPeng;
-        }
-        return AgariType.Unknown;
+    var data = {
+      cards: cards,
+      agariCard: agariCard,
+      countDict: countDict,
     }
-
-    function JudgeDuiziAgariType(lastDazi, agari) {
-        if (!Duizi(lastDazi)) {
-            return AgariType.Unknown;
-        }
-        if (_.first(lastDazi).equal(agari)) {
-            return AgariType.DanQi;
-        }
-        return AgariType.Unknown;
+    var ctx = {
+      cur: 0,
+      composition: new Composition(),
+      usedDict: usedDict,
     }
+    var compositions = []
+    ParseToComposition(ctx, data, compositions)
+    return compositions
+  }
 
-    function InsertCard(card, destArr) {
-        for (var i = 0, len = destArr.length; i < len; i++) {
-            if (destArr[i].score >= card.score) {
-                break;
-            }
-        }
-        destArr.splice(i, 0, card);
+  function ParseToComposition(ctx, data, compositions) {
+    console.assert(ctx.cur <= data.cards.length, 'ctx cur invalid')
+    if (ctx.cur == data.cards.length) {
+      compositions.push(ctx.composition)
+      return
     }
-
-    function GenerateCompositions(tehai, agariCard) {
-        var cards = _.clone(tehai);
-        InsertCard(agariCard, cards);
-        var countDict = {};        
-        for(let card of cards) {
-            countDict[card.score] = countDict[card.score]? countDict[card.score]+1 : 1;
-        }
-        var usedDict = {};
-        for(let key in countDict) {
-            usedDict[key] = 0;
-        }
-        
-        var data = {
-            cards: cards,
-            agariCard: agariCard,
-            countDict: countDict,
-        };
-        var ctx = {
-            cur: 0,
-            composition: new Composition(),
-            usedDict: usedDict,
-        }
-        var compositions = [];
-        ParseToComposition(ctx, data, compositions);
-        return compositions;
+    var funcs = [ParseKezi, ParseShunzi, ParseDuizi]
+    for (let parseFunc of funcs) {
+      var newDazi = parseFunc(ctx, data)
+      if (newDazi.length == 0) {
+        continue
+      }
+      var newCtxs = CreateNewParseCtx(ctx, data, newDazi)
+      newCtxs.forEach((newCtx) =>
+        ParseToComposition(newCtx, data, compositions)
+      )
     }
+  }
 
-    function ParseToComposition(ctx, data, compositions) {
-        console.assert(ctx.cur <= data.cards.length, "ctx cur invalid");
-        if (ctx.cur == data.cards.length) {            
-            compositions.push(ctx.composition);
-            return;
-        }
-        var funcs = [ParseKezi, ParseShunzi, ParseDuizi];
-        for(let parseFunc of funcs) {            
-            var newDazi = parseFunc(ctx, data);
-            if (newDazi.length == 0) {
-                continue;
-            }
-            var newCtxs = CreateNewParseCtx(ctx, data, newDazi);
-            newCtxs.forEach(newCtx => ParseToComposition(newCtx, data, compositions));
-            
-        }        
-        
+  function CreateNewParseCtx(ctx, data, newDazi) {
+    var newCtxs = []
+    var newCtx = _.cloneDeep(ctx)
+
+    newDazi.forEach((card) => newCtx.usedDict[card.score]++)
+    newCtx.cur = NewPosition(newCtx, data, newDazi)
+    var compositions = NewCompositions(newCtx, data, newDazi)
+    for (let comp of compositions) {
+      let c = _.cloneDeep(newCtx)
+      c.composition = comp
+      newCtxs.push(c)
     }
+    return newCtxs
+  }
 
-    function CreateNewParseCtx(ctx, data, newDazi) {
-        var newCtxs = [];
-        var newCtx = _.cloneDeep(ctx);
-        
-        newDazi.forEach(card => newCtx.usedDict[card.score]++);
-        newCtx.cur = NewPosition(newCtx, data, newDazi);
-        var compositions = NewCompositions(newCtx, data, newDazi);
-        for(let comp of compositions) {
-            let c = _.cloneDeep(newCtx);
-            c.composition = comp;
-            newCtxs.push(c);
-        }
-        return newCtxs;
+  function NewCompositions(ctx, data, newDazi) {
+    console.assert(newDazi.length == 2 || newDazi.length == 3)
+    var comp = ctx.composition
+    switch (newDazi.length) {
+      case 3:
+        comp.menzus.push(newDazi)
+        break
+      case 2:
+        comp.duizis.push(newDazi)
+        break
     }
-
-    function NewCompositions(ctx, data, newDazi) {
-        console.assert(newDazi.length == 2 || newDazi.length ==3);
-        var comp = ctx.composition;
-        switch(newDazi.length) {
-            case 3:
-                comp.menzus.push(newDazi);
-                break;
-            case 2:
-                comp.duizis.push(newDazi);
-                break;
-        }
-        if (comp.lastDazi.length != 0 
-            || newDazi.find(elem => elem.score == data.agariCard.score) == undefined) {
-            return [comp];
-        }
-        if (ctx.usedDict[data.agariCard.score] == data.countDict[data.agariCard.score]) {
-            comp.lastDazi = newDazi;
-            return [comp];
-        }
-        var comp2 = _.cloneDeep(comp);
-        comp.lastDazi = newDazi;
-        return [comp, comp2];
+    if (
+      comp.lastDazi.length != 0 ||
+      newDazi.find((elem) => elem.score == data.agariCard.score) == undefined
+    ) {
+      return [comp]
     }
-
-    function NewPosition(ctx, data, newDazi) {
-        console.assert(newDazi.length == 2 || newDazi.length == 3);
-        var curCard = data.cards[ctx.cur];        
-        var newPos = ctx.cur;
-        if (newDazi.length == 2) {
-            newPos += 2;
-        } else {
-            if (newDazi[1].score == curCard.score) {
-                newPos += 3;
-            } else {
-                newPos += 1;
-            }
-        }
-        if (ctx.usedDict[curCard.score] < data.countDict[curCard.score]) {
-            return newPos;
-        }
-        while(newPos < data.cards.length) {
-            let card = data.cards[newPos];
-            newPos += ctx.usedDict[card.score];
-            if (ctx.usedDict[card.score] < data.countDict[card.score]) {
-                break;
-            }
-        }
-        return newPos;
+    if (
+      ctx.usedDict[data.agariCard.score] == data.countDict[data.agariCard.score]
+    ) {
+      comp.lastDazi = newDazi
+      return [comp]
     }
+    var comp2 = _.cloneDeep(comp)
+    comp.lastDazi = newDazi
+    return [comp, comp2]
+  }
 
-    function ParseKezi(ctx, data) {
-        var keziCards = [];
+  function NewPosition(ctx, data, newDazi) {
+    console.assert(newDazi.length == 2 || newDazi.length == 3)
+    var curCard = data.cards[ctx.cur]
+    var newPos = ctx.cur
+    if (newDazi.length == 2) {
+      newPos += 2
+    } else {
+      if (newDazi[1].score == curCard.score) {
+        newPos += 3
+      } else {
+        newPos += 1
+      }
+    }
+    if (ctx.usedDict[curCard.score] < data.countDict[curCard.score]) {
+      return newPos
+    }
+    while (newPos < data.cards.length) {
+      let card = data.cards[newPos]
+      newPos += ctx.usedDict[card.score]
+      if (ctx.usedDict[card.score] < data.countDict[card.score]) {
+        break
+      }
+    }
+    return newPos
+  }
+
+  function ParseKezi(ctx, data) {
+    var keziCards = []
+    try {
+      if (
+        data.cards[ctx.cur].equal(data.cards[ctx.cur + 1]) &&
+        data.cards[ctx.cur].equal(data.cards[ctx.cur + 2])
+      ) {
+        keziCards.push(data.cards[ctx.cur])
+        keziCards.push(data.cards[ctx.cur + 1])
+        keziCards.push(data.cards[ctx.cur + 2])
+      }
+    } catch (err) {
+    } finally {
+      return keziCards
+    }
+  }
+
+  function ParseShunzi(ctx, data) {
+    var shunziCards = []
+    var preCard = data.cards[ctx.cur]
+    shunziCards.push(preCard)
+    for (let pos = ctx.cur + 1; pos < data.cards.length; pos++) {
+      let curCard = data.cards[pos]
+      if (curCard.type != preCard.type) {
+        return []
+      }
+      if (curCard.value == preCard.value + 1) {
+        shunziCards.push(curCard)
+        if (shunziCards.length == 3) {
+          return shunziCards
+        }
+        preCard = curCard
+      }
+    }
+    return []
+  }
+
+  function ParseDuizi(ctx, data, compositions) {
+    var duiziCards = []
+    try {
+      if (data.cards[ctx.cur].equal(data.cards[ctx.cur + 1])) {
+        duiziCards.push(data.cards[ctx.cur])
+        duiziCards.push(data.cards[ctx.cur + 1])
+      }
+    } finally {
+      return duiziCards
+    }
+  }
+
+  function IsDora(target, indicate) {
+    if (indicate.type != target.type) {
+      return false
+    }
+    return (indicate.value % type2size[indicate.type]) + 1 == target.value
+  }
+
+  function IsCharacterCard(card) {
+    return card.type == 'f' || card.type == 'y'
+  }
+
+  function IsCharacterType(type) {
+    return type == 'f' || type == 'y'
+  }
+
+  function Is19(card) {
+    return (card.value == 1 || card.value == 9) && !IsCharacterCard(card)
+  }
+
+  function Dora(indicate) {
+    return new Card(
+      (indicate.value % type2size[indicate.type]) + 1,
+      indicate.type
+    )
+  }
+
+  function CalcDoraCount(cardArr, doraScores) {
+    var total = 0
+    for (let card of cardArr) {
+      if (doraScores[card.score]) {
+        total += doraScores[card.score]
+      }
+    }
+    return total
+  }
+
+  var app = new Vue({
+    el: '#app',
+    data: {
+      cardInstances: {},
+      dora: [],
+      ura: [],
+      used: {},
+      akaUsed: {
+        m: false,
+        s: false,
+        p: false,
+      },
+      normalYakus: [],
+      yakumanYakus: [],
+      tehai: [],
+      fuuro: [],
+      agariCard: {},
+      ps: [],
+      ms: [],
+      ss: [],
+      fs: [],
+      ys: [],
+      compostions: [],
+      menzu: new Menzu(),
+      menzen: false,
+
+      jifu: null,
+      jofu: null,
+
+      tsumo: false,
+      riichi: false,
+      wriichi: false,
+      ippatsu: false,
+      chankan: false,
+      haitei: false,
+      hotei: false,
+      tenho: false,
+      chiho: false,
+    },
+    created: function () {
+      for (let type in type2size) {
+        if (!IsCharacterType(type)) {
+          let instance = new Card(0, type)
+          this.cardInstances[instance.name()] = instance
+        }
+        let size = type2size[type]
+        for (let val = 1; val <= size; val++) {
+          let instance = new Card(val, type)
+          this.cardInstances[instance.name()] = instance
+        }
+      }
+    },
+    computed: {
+      sortedTehai: function () {},
+    },
+    watch: {
+      fuuro: function (newFuroo, oldFuroo) {
+        this.menzen = this.isMenzen()
+      },
+    },
+    methods: {
+      classify: function () {
+        this.ps = []
+        this.ms = []
+        this.ss = []
+        this.fs = []
+        this.ys = []
+        this.tehai.forEach((card) => {
+          switch (card.type) {
+            case 'p':
+              this.ps.push(card)
+              break
+            case 'm':
+              this.ms.push(card)
+              break
+            case 's':
+              this.ss.push(card)
+              break
+            case 'f':
+              this.fs.push(card)
+              break
+            case 'y':
+              this.ys.push(card)
+              break
+            default:
+              throw 'Unknown type: ' + card.type
+          }
+        })
+      },
+
+      onClick: function (card, destArr) {
+        if (!this.checkUsed(card)) {
+          alert('超出4张')
+          return
+        }
+        if (!this.checkAkaUsed(card)) {
+          alert('红宝牌已使用')
+          return
+        }
+        if (!this.checkCardsNum()) {
+          alert('手牌数量超出上限')
+          return
+        }
+        InsertCard(card, destArr)
+        this.afterInsert(card)
+      },
+
+      afterInsert: function (card) {
+        var score = card.score
+        if (card.aka == true) {
+          this.akaUsed[card.type] = true
+        }
+        this.used[score] = this.used[score] ? this.used[score] + 1 : 1
+      },
+
+      checkCardsNum: function () {
+        return this.tehai.length + this.fuuro.length * 3 <= 13
+      },
+
+      checkNewFuuroAvailable: function () {
+        return this.tehai.length + (this.fuuro.length + 1) * 3 <= 13
+      },
+
+      checkUsed: function (card) {
+        var score = card.score
+        return this.used[score] <= 4
+      },
+
+      checkAkaUsed: function (card) {
+        return card.aka == false || this.akaUsed[card.type] == true
+      },
+
+      insertMenzu: function (isUraKan) {
         try {
-            if (data.cards[ctx.cur].equal(data.cards[ctx.cur + 1])
-                && data.cards[ctx.cur].equal(data.cards[ctx.cur + 2])) {
-                    keziCards.push(data.cards[ctx.cur]);
-                    keziCards.push(data.cards[ctx.cur+1]);
-                    keziCards.push(data.cards[ctx.cur+2]);
-            }
+          this.menzu.generate(isUraKan)
         } catch (err) {
-
+          alert('面子非法')
+          return
         }
-        finally {
-            return keziCards;
-        }        
-
-    }
-
-    function ParseShunzi(ctx, data) {
-        var shunziCards = [];
-        var preCard = data.cards[ctx.cur];
-        shunziCards.push(preCard);
-        for(let pos = ctx.cur+1 ; pos < data.cards.length; pos++) {
-            let curCard = data.cards[pos];
-            if (curCard.type != preCard.type) {
-                return [];
-            }
-            if (curCard.value == preCard.value+1) {
-                shunziCards.push(curCard);
-                if (shunziCards.length == 3) {
-                    return shunziCards;
-                }
-                preCard = curCard;
-            }
+        if (!this.checkNewFuuroAvailable()) {
+          alert('牌数已达上限，无法加入新副露')
+          return
         }
-        return [];
-    }
+        this.fuuro.push(this.menzu)
+        this.menzu = new Menzu()
+      },
 
-    function ParseDuizi(ctx, data, compositions) {
-        var duiziCards = [];
+      doraCount: function (indicateArr) {
+        var doraScores = this.getDoraCardScores(indicateArr)
+        var total = 0
+        total += CalcDoraCount(this.tehai, doraScores)
+        for (let menzu of this.fuuro) {
+          total += CalcDoraCount(menzu, this.fuuro)
+        }
+        return total
+      },
+
+      getDoraCardScores: function (indicates) {
+        var targetCards = {}
+        for (let indicate of indicates) {
+          let score = Dora(inidcate).score
+          targetCards[score] = targetCards[score] ? targetCards[score] + 1 : 0
+        }
+        return targetCards
+      },
+
+      akaCount: function () {
+        var sum = 0
+        for (let key in this.akaUsed) {
+          if (this.akaUsed[key]) sum++
+        }
+        return sum
+      },
+
+      isMenzen: function () {
+        if (this.fuuro.length == 0) {
+          return true
+        }
+        for (let menzu of this.fuuro) {
+          if (menzu.ura == false) {
+            return false
+          }
+        }
+
+        return true
+      },
+
+      parse: function () {
+        this.classify()
+        this.compositions = GenerateCompositions(this.tehai, this.agariCard)
+      },
+
+      checkYakus: function () {
+        yakus = []
+        var yakuCheckFunc = (yaku) => {
+          if (yaku.check(this)) {
+            yakus.push(yaku)
+          }
+        }
         try {
-            if (data.cards[ctx.cur].equal(data.cards[ctx.cur + 1])) {
-                duiziCards.push(data.cards[ctx.cur]);
-                duiziCards.push(data.cards[ctx.cur + 1]);
-            }
+          this.yakumanYakus.forEach(yakuCheckFunc)
+        } catch (err) {
+          alert(err)
+          return
         }
-        finally {
-            return duiziCards;
-        }  
+        if (yakus.length != 0) {
+          return yakus
+        }
+        try {
+          this.normalYakus.forEach(yakuCheckFunc)
+        } catch (err) {
+          alert(err)
+          return
+        }
+
+        return yakus
+      },
+
+      testParse: function () {
+        var arr = [
+          '1s',
+          '1s',
+          '2s',
+          '2s',
+          '3s',
+          '4s',
+          '4s',
+          '5s',
+          '5s',
+          '6s',
+          '6s',
+          '7s',
+          '7s',
+        ]
+        var agari = '3s'
+        var agariCard = this.cardInstances[agari]
+        var cards = []
+        arr.forEach((name) => cards.push(this.cardInstances[name]))
+        var res = GenerateCompositions(cards, agariCard)
+        var fun = function (arr) {
+          let str = ''
+          for (let elem of arr) {
+            str += elem.name()
+          }
+          return str
+        }
+        for (let comp of res) {
+          for (let mz of comp.menzus) {
+            console.log(fun(mz))
+          }
+          for (let dz of comp.duizis) {
+            console.log(fun(dz))
+          }
+          console.log('last dazi: ' + fun(comp.lastDazi))
+        }
+        //console.log(JSON.stringify(res, null , '\t'));
+      },
+    },
+  })
+
+  function checkRiichiYaku(ctx) {
+    if (!ctx.riichi) {
+      return false
+    }
+    if (ctx.menzen) {
+      throw '必须在门清状态下立直'
+    }
+    if (ctx.wriichi) {
+      throw '无法与双立直同时生效'
     }
 
-    function IsDora(target, indicate) {
-        if(indicate.type != target.type) {
-            return false;
-        }
-        return indicate.value%type2size[indicate.type]+1 == target.value;
+    return true
+  }
+
+  function checkIppatsuYaku(ctx) {
+    if (!ctx.ippatsu) {
+      return false
+    }
+    if (!ctx.riichi && !ctx.wriichi) {
+      throw '一发必须复合立直'
+    }
+    return true
+  }
+
+  function checkMenzenTsumoYaku(ctx) {
+    return ctx.menzen && ctx.tsumo
+  }
+
+  function checkPinhoYaku(ctx) {}
+
+  function checkTanyaoYaku(ctx) {
+    var checkFunc = (card) => {
+      if (IsCharacterCard(card) || Is19(card)) {
+        return false
+      }
     }
 
-    function IsCharacterCard(card) {
-        return card.type == "f" || card.type == "y";
+    for (let menzu of ctx.fuuro) {
+      for (let card of menzu) {
+        if (!checkFunc(card)) {
+          return false
+        }
+      }
+    }
+    for (let card of ctx.tehai) {
+      if (!checkFunc(card)) {
+        return false
+      }
+    }
+    return true
+  }
+
+  function checkWRiichiYaku(ctx) {
+    if (!ctx.wriichi) {
+      return false
+    }
+    if (ctx.menzen) {
+      throw '必须在门清状态下双立直'
+    }
+    if (ctx.riichi) {
+      throw '无法与立直同时生效'
     }
 
-    function IsCharacterType(type) {
-        return type == "f" || type == "y";
+    return true
+  }
+
+  function checkHaiteiYaku(ctx) {
+    if (!ctx.haitei) {
+      return false
     }
-
-    function Is19(card) {
-        return (card.value == 1 || card.value == 9) && !IsCharacterCard(card);
+    if (!ctx.tsumo) {
+      throw '海底必须自摸'
     }
+    return true
+  }
 
-    function Dora(indicate) {
-        return new Card(indicate.value%type2size[indicate.type]+1, indicate.type);
+  function checkHoteiYaku(ctx) {
+    if (!ctx.hotei) {
+      return false
     }
-
-    function CalcDoraCount(cardArr, doraScores) {
-        var total = 0;
-        for (let card of cardArr) {
-            if (doraScores[card.score]) {
-                total += doraScores[card.score];
-            }
-        }
-        return total;
+    if (ctx.tsumo) {
+      throw '河底无法自摸'
     }
-
-    var app = new Vue({
-        el: "#app",
-        data: {
-            cardInstances: {},
-            dora: [],
-            ura: [],
-            used: {},
-            akaUsed: {
-                "m": false,
-                "s": false,
-                "p": false,
-            },
-            normalYakus: [],
-            yakumanYakus: [],
-            tehai: [],
-            fuuro: [],
-            agariCard: {},
-            ps: [],
-            ms: [],
-            ss: [],
-            fs: [],
-            ys: [],
-            compostions: [],
-            menzu: new Menzu(),
-            menzen: false,
-
-            jifu: null,
-            jofu: null,
-
-            tsumo: false,
-            riichi: false,
-            wriichi: false,
-            ippatsu: false,
-            chankan: false,
-            haitei: false,
-            hotei: false,
-            tenho: false,
-            chiho: false,
-
-        },
-        created: function() {
-            for (let type in type2size) {
-                if (!IsCharacterType(type)) {
-                    let instance = new Card(0, type);
-                    this.cardInstances[instance.name()] = instance;
-                }
-                let size = type2size[type];
-                for(let val=1; val<=size; val++) {
-                    let instance = new Card(val, type);
-                    this.cardInstances[instance.name()] = instance;
-                }
-            }
-        },
-        computed: {
-            sortedTehai: function() {
-
-            },
-
-        },
-        watch: {
-            fuuro: function(newFuroo, oldFuroo) {
-                this.menzen = this.isMenzen();
-            }
-        },
-        methods: {
-            classify: function() {
-                this.ps = [];
-                this.ms = [];
-                this.ss = [];
-                this.fs = [];
-                this.ys = [];
-                this.tehai.forEach(card => {
-                    switch(card.type) {
-                        case "p":
-                            this.ps.push(card);
-                            break;
-                        case "m":
-                            this.ms.push(card);
-                            break;
-                        case "s":
-                            this.ss.push(card);
-                            break;
-                        case "f":
-                            this.fs.push(card);
-                            break;
-                        case "y":
-                            this.ys.push(card);
-                            break;
-                        default:
-                            throw("Unknown type: "+card.type);
-                    }
-                });
-            },
-
-            onClick: function(card, destArr) {                
-                if (!this.checkUsed(card)) {
-                    alert("超出4张");
-                    return;
-                }
-                if (!this.checkAkaUsed(card)) {
-                    alert("红宝牌已使用")
-                    return;
-                }
-                if (!this.checkCardsNum()) {
-                    alert("手牌数量超出上限");
-                    return;
-                }
-                InsertCard(card, destArr);
-                this.afterInsert(card);
-            },
-
-            afterInsert: function(card) {
-                var score = card.score;
-                if (card.aka == true) {
-                    this.akaUsed[card.type] = true;
-                }
-                this.used[score] = this.used[score]? this.used[score]+1 : 1;
-            },
-
-            checkCardsNum: function() {
-                return this.tehai.length+this.fuuro.length*3 <= 13;
-            },
-
-            checkNewFuuroAvailable: function() {
-                return this.tehai.length+(this.fuuro.length+1)*3 <= 13;
-            },
-
-            checkUsed: function(card) {
-                var score = card.score;
-                return this.used[score] <= 4;
-            },
-
-            checkAkaUsed: function(card) {
-                return card.aka == false || this.akaUsed[card.type] == true;
-            },
-
-            insertMenzu: function(isUraKan) {
-                try {
-                    this.menzu.generate(isUraKan);
-                }
-                catch (err) {
-                    alert("面子非法");
-                    return;
-                }
-                if (!this.checkNewFuuroAvailable()) {
-                    alert("牌数已达上限，无法加入新副露");
-                    return;
-                }
-                this.fuuro.push(this.menzu);
-                this.menzu = new Menzu;
-            },
-
-            doraCount: function(indicateArr) {
-                var doraScores = this.getDoraCardScores(indicateArr);
-                var total = 0;
-                total += CalcDoraCount(this.tehai, doraScores);
-                for(let menzu of this.fuuro) {
-                    total += CalcDoraCount(menzu, this.fuuro);
-                }
-                return total;
-            },     
-
-            getDoraCardScores: function(indicates) {
-                var targetCards = {};
-                for(let indicate of indicates) {
-                    let score = Dora(inidcate).score;
-                    targetCards[score] = targetCards[score] ? targetCards[score]+1:0;
-                }
-                return targetCards;
-            },
-
-            akaCount: function() {
-                var sum = 0;
-                for(let key in this.akaUsed) {
-                    if (this.akaUsed[key])
-                        sum++;
-                }                
-                return sum;
-            },
-
-            isMenzen: function() {
-                if (this.fuuro.length == 0) {
-                    return true;
-                }
-                for(let menzu of this.fuuro) {
-                    if (menzu.ura == false) {
-                        return false;
-                    }
-                }
-
-                return true;
-            },
-
-            parse: function() {
-                this.classify();
-                this.compositions = GenerateCompositions(this.tehai, this.agariCard);
-            },
-
-            checkYakus: function() {                
-                yakus = [];
-                var yakuCheckFunc = yaku => {
-                    if (yaku.check(this)) {
-                        yakus.push(yaku);
-                    }
-                };
-                try {
-                    this.yakumanYakus.forEach(yakuCheckFunc);
-                }
-                catch (err) {
-                    alert(err);
-                    return;
-                }                
-                if (yakus.length != 0) {
-                    return yakus;
-                }
-                try {
-                    this.normalYakus.forEach(yakuCheckFunc);
-                }
-                catch (err) {
-                    alert(err);
-                    return;
-                }
-                
-                return yakus;
-            },
-
-            testParse: function() {
-                var arr = ["1s", "1s", "2s", "2s", "3s", "4s", "4s", "5s", "5s", "6s", "6s", "7s", "7s"];
-                var agari = "3s";
-                var agariCard = this.cardInstances[agari];
-                var cards = [];
-                arr.forEach(name => cards.push(this.cardInstances[name]));
-                var res = GenerateCompositions(cards, agariCard);
-                var fun = function (arr) {
-                    let str = '';
-                    for (let elem of arr) {
-                        str += elem.name();
-                    }
-                    return str;
-                };
-                for(let comp of res) {
-                    for(let mz of comp.menzus) {
-                        console.log(fun(mz));
-                    }
-                    for(let dz of comp.duizis) {
-                        console.log(fun(dz));
-                    }
-                    console.log('last dazi: '+fun(comp.lastDazi));
-                }
-                //console.log(JSON.stringify(res, null , '\t'));
-            },
-            
-        }
-    })
-
-    function checkRiichiYaku(ctx) {
-        if (!ctx.riichi) {
-            return false;
-        }
-        if (ctx.menzen) {
-            throw("必须在门清状态下立直");
-        }
-        if (ctx.wriichi) {
-            throw("无法与双立直同时生效");
-        }
-
-        return true;
+    if (ctx.ippatsu) {
+      throw '河底无法复合一发'
     }
+    return true
+  }
 
-    function checkIppatsuYaku(ctx) {
-        if (!ctx.ippatsu) {
-            return false;
-        }
-        if (!ctx.riichi && !ctx.wriichi) {
-            throw("一发必须复合立直");
-        }
-        return true;
+  function checkChankanYaku(ctx) {
+    if (!ctx.chankan) {
+      return false
     }
-
-    function checkMenzenTsumoYaku(ctx) {
-        return ctx.menzen && ctx.tsumo;
+    if (ctx.tsumo) {
+      throw '抢杠无法自摸'
     }
+    return true
+  }
 
-    function checkPinhoYaku(ctx) {
-
+  function checkGokushiYaku(ctx) {
+    if (ctx.fuuro.length > 0) {
+      return false
     }
-
-    function checkTanyaoYaku(ctx) {
-        var checkFunc = card => {
-            if (IsCharacterCard(card) || Is19(card)) {
-                return false;
-            }
-        };
-
-        for(let menzu of ctx.fuuro) {
-            for(let card of menzu) {
-                if (!checkFunc(card)) {
-                    return false;
-                }
-            }
-        }
-        for(let card of ctx.tehai) {
-            if(!checkFunc(card)) {
-                return false;
-            }
-        }
-        return true;
+    var set = new Set()
+    for (let card of ctx.tehai) {
+      if (!Is19(card) && !IsCharacterCard(card)) {
+        return false
+      }
+      set.add(card.score)
     }
-
-    function checkWRiichiYaku(ctx) {
-        if (!ctx.wriichi) {
-            return false;
-        }
-        if (ctx.menzen) {
-            throw ("必须在门清状态下双立直");
-        }
-        if (ctx.riichi) {
-            throw ("无法与立直同时生效");
-        }
-
-        return true;
+    if (set.size() != 12) {
+      return false
     }
-    
-    function checkHaiteiYaku(ctx) {
-        if (!ctx.haitei) {
-            return false;
-        }
-        if (!ctx.tsumo) {
-            throw("海底必须自摸");
-        }
-        return true;
-    }
+    var agariCard = ctx.agariCard
+    return (
+      (Is19(agariCard) || IsCharacterCard(agariCard)) &&
+      !set.has(agariCard.score)
+    )
+  }
 
-    function checkHoteiYaku(ctx) {
-        if (!ctx.hotei) {
-            return false;
-        }
-        if (ctx.tsumo) {
-            throw("河底无法自摸");
-        }
-        if (ctx.ippatsu) {
-            throw("河底无法复合一发");
-        }
-        return true;
+  function checkGokushiJusanmachiYaku(ctx) {
+    if (ctx.fuuro.length > 0) {
+      return false
     }
-
-    function checkChankanYaku(ctx) {
-        if (!ctx.chankan) {
-            return false;
-        }
-        if (ctx.tsumo) {
-            throw("抢杠无法自摸");
-        }
-        return true;
+    var set = new Set()
+    for (let card of ctx.tehai) {
+      if (!Is19(card) && !IsCharacterCard(card)) {
+        return false
+      }
+      set.add(card.score)
     }
-
-    function checkGokushiYaku(ctx) {
-        if(ctx.fuuro.length > 0) {
-            return false;
-        }
-        var set = new Set();
-        for(let card of ctx.tehai) {
-            if(!Is19(card) && !IsCharacterCard(card)) {
-                return false;
-            }
-            set.add(card.score);
-        }
-        if(set.size() != 12) {
-            return false;
-        }
-        var agariCard = ctx.agariCard;
-        return (Is19(agariCard) || IsCharacterCard(agariCard))
-                 && !set.has(agariCard.score);
+    if (set.size() != 13) {
+      return false
     }
+    var agariCard = ctx.agariCard
+    return Is19(agariCard) || IsCharacterCard(agariCard)
+  }
 
-    function checkGokushiJusanmachiYaku(ctx) {
-        if(ctx.fuuro.length > 0) {
-            return false;
-        }
-        var set = new Set();
-        for(let card of ctx.tehai) {
-            if(!Is19(card) && ! IsCharacterCard(card)) {
-                return false;
-            }
-            set.add(card.score);
-        }
-        if(set.size() != 13) {
-            return false;
-        }
-        var agariCard = ctx.agariCard;
-        return Is19(agariCard) || IsCharacterCard(agariCard);
-    }
-
-    function checkGokushiJusanmachiYakuWithTenho(ctx) {
-        return checkGokushiJusanmachiYaku(ctx) || (checkGokushiYaku(ctx) && ctx.tenho == true);
-    }
-
+  function checkGokushiJusanmachiYakuWithTenho(ctx) {
+    return (
+      checkGokushiJusanmachiYaku(ctx) ||
+      (checkGokushiYaku(ctx) && ctx.tenho == true)
+    )
+  }
 </script>
