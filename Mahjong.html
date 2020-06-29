@@ -72,6 +72,7 @@
   function Menzu() {
     this.shunzi = false
     this.kezi = false
+    this.duizi = false
     this.ura = false
     this.type = ''
     this.cards = []
@@ -81,10 +82,19 @@
     this.ura = isUra
     this.shunzi = Shunzi(this.cards)
     this.kezi = Kezi(this.cards)
-    if (!this.shunzi && !this.kezi) {
+    this.duizi = Duizi(this.cards)
+    if (!this.shunzi && !this.kezi && !this.duizi) {
       throw 'generation failed'
     }
     this.type = this.cards[0].type
+  }
+
+  Menzu.Instance = function (cards) {
+    var instance = new Menzu()
+    instance.cards = cards
+    instance.generate()
+
+    return instance
   }
 
   function Tokuten(fan, fu, isYakuman, isOya, isTsumo) {
@@ -105,7 +115,7 @@
   function Composition() {
     this.menzus = []
     this.duizis = []
-    this.lastDazi = []
+    this.lastDazi = null
   }
 
   function Name(val, type) {
@@ -173,42 +183,42 @@
   }
 
   function JudgeShunziAgariType(lastDazi, agari) {
-    if (!Shunzi(lastDazi)) {
+    if (!lastDazi.shunzi) {
       return AgariType.Unknown
     }
-    if (lastDazi[1].equal(agari)) {
+    var cards = lastDazi.cards
+    if (cards[1].equal(agari)) {
       return AgariType.QianZhang
     } else if (
-      (_.first(lastDazi).value =
-        (1 && _.last(lastDazi).equal(agari)) ||
-        (_.last(lastDazi).value === type2size[_.last(lastDazi).type] &&
-          _.first(lastDazi).equal(agari)))
+      (_.first(cards).value =
+        (1 && _.last(cards).equal(agari)) ||
+        (_.last(cards).value === type2size[_.last(cards).type] &&
+          _.first(cards).equal(agari)))
     ) {
       return AgariType.DanBian
-    } else if (
-      _.first(lastDazi).equal(agari) ||
-      _.last(lastDazi).equal(agari)
-    ) {
+    } else if (_.first(cards).equal(agari) || _.last(cards).equal(agari)) {
       return AgariType.LiangMian
     }
     return AgariType.Unknown
   }
 
   function JudgeKeziAgariType(lastDazi, agari) {
-    if (!Kezi(lastDazi)) {
+    if (!lastDazi.kezi) {
       return AgariType.Unknown
     }
-    if (_.first(lastDazi).equal(agari)) {
+    var cards = lastDazi.cards
+    if (_.first(cards).equal(agari)) {
       return AgariType.DuiPeng
     }
     return AgariType.Unknown
   }
 
   function JudgeDuiziAgariType(lastDazi, agari) {
-    if (!Duizi(lastDazi)) {
+    if (!lastDazi.duizi) {
       return AgariType.Unknown
     }
-    if (_.first(lastDazi).equal(agari)) {
+    var cards = lastDazi.cards
+    if (_.first(cards).equal(agari)) {
       return AgariType.DanQi
     }
     return AgariType.Unknown
@@ -260,7 +270,7 @@
     var comps = []
     for (let parseFunc of funcs) {
       let newDazi = parseFunc(ctx.cardsRemain)
-      if (newDazi.length === 0) {
+      if (newDazi == null) {
         continue
       }
       let newCtxs = CreateNewParseCtx(ctx, data, newDazi)
@@ -276,7 +286,7 @@
     var newCtx = _.cloneDeep(ctx)
 
     var map = new Map()
-    for (let card of newDazi) {
+    for (let card of newDazi.cards) {
       let score = card.score
       map.set(score, map.has(score) ? map.get(score) + 1 : 1)
     }
@@ -290,7 +300,7 @@
       return false
     })
 
-    newDazi.forEach((card) => newCtx.usedDict[card.score]++)
+    newDazi.cards.forEach((card) => newCtx.usedDict[card.score]++)
     //newCtx.cur = NewPosition(newCtx, data, newDazi)
     var compositions = NewCompositions(newCtx, data, newDazi)
     for (let comp of compositions) {
@@ -302,9 +312,9 @@
   }
 
   function NewCompositions(ctx, data, newDazi) {
-    console.assert(newDazi.length === 2 || newDazi.length === 3)
+    console.assert(newDazi.cards.length === 2 || newDazi.cards.length === 3)
     var comp = ctx.composition
-    switch (newDazi.length) {
+    switch (newDazi.cards.length) {
       case 3:
         comp.menzus.push(newDazi)
         break
@@ -313,13 +323,15 @@
         break
     }
     if (
-      comp.lastDazi.length != 0 ||
-      newDazi.find((elem) => elem.score === data.agariCard.score) == undefined
+      comp.lastDazi != null ||
+      newDazi.cards.find((elem) => elem.score === data.agariCard.score) ==
+        undefined
     ) {
       return [comp]
     }
     if (
-      ctx.usedDict[data.agariCard.score] === data.countDict[data.agariCard.score]
+      ctx.usedDict[data.agariCard.score] ===
+      data.countDict[data.agariCard.score]
     ) {
       comp.lastDazi = newDazi
       return [comp]
@@ -422,9 +434,9 @@
       nnStatus.Card(),
     ]
     if (curCard && curCard.equal(nCard) && nCard.equal(nnCard)) {
-      return [curCard, nCard, nnCard]
+      return Menzu.Instance([curCard, nCard, nnCard])
     }
-    return []
+    return null
   }
 
   function ParseFirstShunzi(cardsRemain) {
@@ -453,9 +465,9 @@
       nnStatus.Card(),
     ]
     if (curCard && curCard.IsPrev(nCard) && nCard.IsPrev(nnCard)) {
-      return [curCard, nCard, nnCard]
+      return Menzu.Instance([curCard, nCard, nnCard])
     }
-    return []
+    return null
   }
 
   function ParseFirstDuizi(cardsRemain) {
@@ -473,9 +485,9 @@
     var nStatus = status.Next()
     var [curCard, nCard] = [status.Card(), nStatus.Card()]
     if (curCard && curCard.equal(nCard)) {
-      return [curCard, nCard]
+      return Menzu.Instance([curCard, nCard])
     }
-    return []
+    return null
   }
 
   function IsDora(target, indicate) {
@@ -767,12 +779,13 @@
         }
         for (let comp of res) {
           for (let mz of comp.menzus) {
-            console.log(fun(mz))
+            console.log(fun(mz.cards))
           }
           for (let dz of comp.duizis) {
-            console.log(fun(dz))
+            console.log(fun(dz.cards))
           }
-          console.log('last dazi: ' + fun(comp.lastDazi))
+          console.log('last dazi: ' + fun(comp.lastDazi.cards))
+          console.log(JudgeAgariType(comp.lastDazi, agariCard))
         }
         return res
         //console.log(JSON.stringify(res, null , '\t'));
@@ -808,7 +821,7 @@
     return ctx.menzen && ctx.tsumo
   }
 
-  function checkPinhoYaku(ctx) {}
+  function checkPinhoYaku(ctx, comp) {}
 
   function checkTanyaoYaku(ctx) {
     var checkFunc = (card) => {
