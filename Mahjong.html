@@ -540,6 +540,15 @@
     return (card.value === 1 || card.value === 9) && !IsCharacterCard(card)
   }
 
+  function Is19Menzu(menzu) {
+    for (let card of menzu.cards) {
+      if (Is19(card)) {
+        return true
+      }
+    }
+    return false
+  }
+
   function Dora(indicate) {
     return new Card(
       (indicate.value % type2size[indicate.type]) + 1,
