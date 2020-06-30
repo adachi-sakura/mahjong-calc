@@ -128,14 +128,6 @@
     this.isOya = isOya
   }
 
-  function Yaku(name, fan, kuisagari, isYakuman, checkFunc) {
-    this.name = name
-    this.fan = fan
-    this.kuisagari = kuisagari
-    this.isYakuman = isYakuman
-    this.check = checkFunc
-  }
-
   function Composition() {
     'use strict'
     this.menzus = []
@@ -828,7 +820,51 @@
     },
   })
 
-  function checkRiichiYaku(ctx) {
+  function Yaku(name, fan, kuisagari, isYakuman, checkFunc, requirement) {
+    'use strict'
+    this.name = name
+    this.fan = fan
+    this.kuisagari = kuisagari
+    this.isYakuman = isYakuman
+    this.checkFunc = checkFunc
+    this.requirement = requirement
+  }
+
+  Yaku.prototype.Preflight = function (ctx) {
+    return this.checkFunc(ctx)
+  }
+
+  Yaku.prototype.Check = function (ctx, comp) {
+    if (!this.requirement.Validate(comp)) {
+      return false
+    }
+    if (!this.kuisagari === 0 && !ctx.menzen) {
+      return false
+    }
+    return this.checkFunc(ctx, comp)
+  }
+
+  function YakuMetaRequirement(menzuCnt, duiziCnt) {
+    'use strict'
+    this.menzuCnt = menzuCnt
+    this.duiziCnt = duiziCnt
+  }
+
+  YakuMetaRequirement.prototype.None = function () {
+    return this.menzuCnt === 0 && this.duiziCnt === 0
+  }
+
+  YakuMetaRequirement.prototype.Validate = function (comp) {
+    if (this.None()) {
+      return true
+    }
+    return (
+      this.menzuCnt === comp.menzus.length &&
+      this.duiziCnt === comp.duizis.length
+    )
+  }
+
+  const checkRiichiYaku = function (ctx) {
     if (!ctx.riichi) {
       return false
     }
