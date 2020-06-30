@@ -143,6 +143,11 @@
     this.lastDazi = null
   }
 
+  Composition.prototype.Lint = function (fuuro, isTsumo) {
+    this.menzus = this.menzus.concat(fuuro)
+    this.lastDazi.ura = isTsumo
+  }
+
   function Name(val, type) {
     return val + type
   }
