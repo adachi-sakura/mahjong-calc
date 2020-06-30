@@ -161,6 +161,10 @@
     return true
   }
 
+  function Kanzi(menzu) {
+    return menzu.length === 4 && Kezi(menzu)
+  }
+
   //should be sorted
   function Shunzi(menzu) {
     var len = menzu.length
@@ -589,6 +593,7 @@
       chankan: false,
       haitei: false,
       hotei: false,
+      linshan: false,
       tenho: false,
       chiho: false,
     },
@@ -878,7 +883,7 @@
     return true
   }
 
-  function checkIppatsuYaku(ctx) {
+  const checkIppatsuYaku = function (ctx) {
     if (!ctx.ippatsu) {
       return false
     }
@@ -888,17 +893,37 @@
     return true
   }
 
-  function checkMenzenTsumoYaku(ctx) {
+  const checkMenzenTsumoYaku = function (ctx) {
     return ctx.menzen && ctx.tsumo
   }
 
-  function checkPinhoYaku(ctx, comp) {}
+  const checkPinhoYaku = function (ctx, comp) {
+    var agariType = JudgeAgariType(comp.lastDazi, ctx.agariCard)
+    if (agariType !== AgariType.LiangMian) {
+      return false
+    }
+    for (menzu of comp.menzus) {
+      if (menzu.shunzi === false) {
+        return false
+      }
+    }
+    for (duizi of comp.duizis) {
+      if (
+        _.first(duizi).name() === ctx.chanfu ||
+        _.first(duizi).name() === ctx.jifu
+      ) {
+        return false
+      }
+    }
+    return true
+  }
 
-  function checkTanyaoYaku(ctx) {
+  const checkTanyaoYaku = function (ctx) {
     var checkFunc = (card) => {
       if (IsCharacterCard(card) || Is19(card)) {
         return false
       }
+      return true
     }
 
     for (let menzu of ctx.fuuro) {
@@ -913,10 +938,103 @@
         return false
       }
     }
+    return checkFunc(ctx.agariCard)
+  }
+
+  const checkYippaikoYaku = function (ctx, comp) {
+    var s = new Set()
+    var hasDuplicate = new Set()
+    comp.menzus.forEach((menzu) => {
+      var str = menzu.toString()
+      if (s.has(str)) {
+        hasDuplicate.add(str)
+      }
+      s.add(str)
+    })
+    return hasDuplicate.size == 1
+  }
+
+  const checkChanfuYaku = function (ctx, comp) {
+    for (let menzu of comp.menzus) {
+      if (menzu.has(ctx.chanfu)) {
+        return true
+      }
+    }
+    return false
+  }
+
+  const checkJifuYaku = function (ctx, comp) {
+    for (let menzu of comp.menzus) {
+      if (menzu.has(ctx.jifu)) {
+        return true
+      }
+    }
+    return false
+  }
+
+  const checkHakuYaku = function (ctx, comp) {
+    for (let menzu of comp.menzus) {
+      if (menzu.has(new Card(1, 'y'))) {
+        return true
+      }
+    }
+    return false
+  }
+
+  const checkHatsuYaku = function (ctx, comp) {
+    for (let menzu of comp.menzus) {
+      if (menzu.has(new Card(2, 'y'))) {
+        return true
+      }
+    }
+    return false
+  }
+
+  const checkChunYaku = function (ctx, comp) {
+    for (let menzu of comp.menzus) {
+      if (menzu.has(new Card(3, 'y'))) {
+        return true
+      }
+    }
+    return false
+  }
+
+  const checkHaiteiYaku = function (ctx) {
+    if (!ctx.haitei) {
+      return false
+    }
+    if (!ctx.tsumo) {
+      throw '海底必须自摸'
+    }
     return true
   }
 
-  function checkWRiichiYaku(ctx) {
+  const checkHoteiYaku = function (ctx) {
+    if (!ctx.hotei) {
+      return false
+    }
+    if (ctx.tsumo) {
+      throw '河底无法自摸'
+    }
+    if (ctx.ippatsu) {
+      throw '河底无法复合一发'
+    }
+    return true
+  }
+
+  const checkChankanYaku = function (ctx) {
+    if (!ctx.chankan) {
+      return false
+    }
+    if (ctx.tsumo) {
+      throw '抢杠无法自摸'
+    }
+    return true
+  }
+
+  const checkLinshanYaku = function (ctx) {}
+
+  const checkWRiichiYaku = function (ctx) {
     if (!ctx.wriichi) {
       return false
     }
@@ -930,40 +1048,7 @@
     return true
   }
 
-  function checkHaiteiYaku(ctx) {
-    if (!ctx.haitei) {
-      return false
-    }
-    if (!ctx.tsumo) {
-      throw '海底必须自摸'
-    }
-    return true
-  }
-
-  function checkHoteiYaku(ctx) {
-    if (!ctx.hotei) {
-      return false
-    }
-    if (ctx.tsumo) {
-      throw '河底无法自摸'
-    }
-    if (ctx.ippatsu) {
-      throw '河底无法复合一发'
-    }
-    return true
-  }
-
-  function checkChankanYaku(ctx) {
-    if (!ctx.chankan) {
-      return false
-    }
-    if (ctx.tsumo) {
-      throw '抢杠无法自摸'
-    }
-    return true
-  }
-
-  function checkGokushiYaku(ctx) {
+  const checkGokushiYaku = function (ctx) {
     if (ctx.fuuro.length > 0) {
       return false
     }
@@ -984,7 +1069,7 @@
     )
   }
 
-  function checkGokushiJusanmachiYaku(ctx) {
+  const checkGokushiJusanmachiYaku = function (ctx) {
     if (ctx.fuuro.length > 0) {
       return false
     }
@@ -1002,7 +1087,7 @@
     return Is19(agariCard) || IsCharacterCard(agariCard)
   }
 
-  function checkGokushiJusanmachiYakuWithTenho(ctx) {
+  const checkGokushiJusanmachiYakuWithTenho = function (ctx) {
     return (
       checkGokushiJusanmachiYaku(ctx) ||
       (checkGokushiYaku(ctx) && ctx.tenho === true)
