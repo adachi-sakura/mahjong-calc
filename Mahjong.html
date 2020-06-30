@@ -1049,7 +1049,20 @@
     return true
   }
 
-  const checkLinshanYaku = function (ctx) {}
+  const checkLinshanYaku = function (ctx) {
+    if (!ctx.linshan) {
+      return false
+    }
+    if (!ctx.tsumo) {
+      throw '岭上需要自摸'
+    }
+    for (let menzu of ctx.fuuro) {
+      if (Kanzi(menzu.cards)) {
+        return true
+      }
+    }
+    throw '岭上需要副露存在杠'
+  }
 
   const checkWRiichiYaku = function (ctx) {
     if (!ctx.wriichi) {
@@ -1063,6 +1076,164 @@
     }
 
     return true
+  }
+
+  const checkChiduiziYaku = function (ctx, comp) {
+    if (comp.duizis.length !== 7) {
+      return false
+    }
+    var s = new Set()
+    for (let duizi of comp.duizis) {
+      let str = duizi.toString()
+      if (s.has(str)) {
+        return false
+      }
+      s.add(str)
+    }
+    return true
+  }
+
+  const checkIchiYaku = function (ctx, comp) {
+    var dict = {}
+    for (let type in type2size) {
+      dict[type] = new Set()
+    }
+    comp.menzus.forEach((menzu) => {
+      if (menzu.shunzi) {
+        dict[menzu.type].add(menzu.nonTypeString)
+      }
+    })
+
+    for (let entry in dict) {
+      let m = dict[entry]
+      if (m.has('123') && m.has('456') && m.has('789')) {
+        return true
+      }
+    }
+    return false
+  }
+
+  const checkSansetongshunYaku = function (ctx, comp) {
+    var m = new Map()
+    for (let menzu of comp.menzus) {
+      if (!menzu.shunzi) {
+        continue
+      }
+      let str = menzu.nonTypeString()
+      m.set(str, m.has(str) ? m.get(str).add(menzu.type) : new Set())
+    }
+    for (let set of m.values()) {
+      console.assert(set.size <= 3)
+      if (set.size === 3) {
+        return true
+      }
+    }
+    return false
+  }
+
+  const checkHunquanYaku = function (ctx, comp) {
+    var flagCharacter = false
+    var checkFunc = function (menzu) {
+      if (!Is19Menzu(menzu)) {
+        return false
+      }
+      if (IsCharacterType(menzu.type)) {
+        flagCharacter = true
+      }
+      return true
+    }
+
+    for (let menzu of comp.menzus) {
+      if (!checkFunc(menzu)) {
+        return false
+      }
+    }
+    for (let duizi of comp.duizis) {
+      if (!checkFunc(duizi)) {
+        return false
+      }
+    }
+
+    return flagCharacter
+  }
+
+  const checkSansetongkeYaku = function (ctx, comp) {
+    var m = new Map()
+    for (let menzu of comp.menzus) {
+      if (!menzu.kezi || IsCharacterType(menzu.type)) {
+        continue
+      }
+      let str = menzu.nonTypeString()
+      m.set(str, m.has(str) ? m.get(str).add(menzu.type) : new Set())
+    }
+    for (let set of m.values()) {
+      console.assert(set.size <= 3)
+      if (set.size === 3) {
+        return true
+      }
+    }
+    return false
+  }
+
+  const checkSanankeYaku = function (ctx, comp) {
+    var cnt = 0
+    comp.menzus.forEach((menzu) => {
+      if (menzu.ura && menzu.kezi) {
+        cnt++
+      }
+    })
+    return cnt === 3
+  }
+
+  const checkDuiduihoYaku = function (ctx, comp) {
+    for (let menzu of comp.menzus) {
+      if (!menzu.kezi) {
+        return false
+      }
+    }
+    return true
+  }
+
+  const checkShaosanyuanYaku = function (ctx, comp) {
+    var mCnt = 0,
+      dCnt = 0
+    comp.menzus.forEach((menzu) => {
+      if (menzu.type == 'y') {
+        mCnt++
+      }
+    })
+    comp.duizis.forEach((duizi) => {
+      if (duizi.type == 'y') {
+        dCnt++
+      }
+    })
+    return cnt === 2 && dCnt === 1
+  }
+
+  const checkHunlaotoYaku = function (ctx, comp) {
+    var flagCharacter = false
+    var checkFunc = function (menzu) {
+      if (!menzu.kezi && !menzu.duizi && !Is19Menzu(menzu)) {
+        return false
+      }
+      if (IsCharacterType(menzu.type)) {
+        flagCharacter = true
+      }
+      return true
+    }
+
+    for (let menzu of comp.menzus) {
+      if (!checkFunc(menzu)) {
+        return false
+      }
+    }
+    for (let duizi of comp.duizis) {
+      if (!checkFunc(duizi)) {
+        return false
+      }
+    }
+
+    return flagCharacter
   }
 
   const checkGokushiYaku = function (ctx) {
