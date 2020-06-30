@@ -878,6 +878,14 @@
     )
   }
 
+  function RangeBetween(start, end) {
+    return Array.from(new Array(end + 1).keys()).slice(start)
+  }
+
+  function Range(end) {
+    return RangeBetween(0, end - 1)
+  }
+
   const checkRiichiYaku = function (ctx) {
     if (!ctx.riichi) {
       return false
