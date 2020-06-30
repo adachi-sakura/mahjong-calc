@@ -372,6 +372,11 @@
   }
 
   function FilterCompositions(comps) {
+    comps.forEach((comp) => {
+      comp.menzus.sort()
+      comp.duizis.sort()
+    })
+
     var set = new Set()
     _.remove(comps, function (comp) {
       let json = JSON.stringify(comp)
