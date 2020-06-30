@@ -886,7 +886,8 @@
     return RangeBetween(0, end - 1)
   }
 
-  const checkRiichiYaku = function (ctx) {
+  //1 立直
+  const checkYaku1 = function (ctx) {
     if (!ctx.riichi) {
       return false
     }
@@ -900,7 +901,8 @@
     return true
   }
 
-  const checkIppatsuYaku = function (ctx) {
+  //2 一发
+  const checkYaku2 = function (ctx) {
     if (!ctx.ippatsu) {
       return false
     }
@@ -910,11 +912,13 @@
     return true
   }
 
-  const checkMenzenTsumoYaku = function (ctx) {
+  //3 门前自摸
+  const checkYaku3 = function (ctx) {
     return ctx.menzen && ctx.tsumo
   }
 
-  const checkPinhoYaku = function (ctx, comp) {
+  //4 平和
+  const checkYaku4 = function (ctx, comp) {
     var agariType = JudgeAgariType(comp.lastDazi, ctx.agariCard)
     if (agariType !== AgariType.LiangMian) {
       return false
@@ -935,7 +939,8 @@
     return true
   }
 
-  const checkTanyaoYaku = function (ctx) {
+  //5 断幺
+  const checkYaku5 = function (ctx) {
     var checkFunc = (card) => {
       if (IsCharacterCard(card) || Is19(card)) {
         return false
@@ -958,7 +963,8 @@
     return checkFunc(ctx.agariCard)
   }
 
-  const checkYippaikoYaku = function (ctx, comp) {
+  //6 一杯口
+  const checkYaku6 = function (ctx, comp) {
     var s = new Set()
     var hasDuplicate = new Set()
     comp.menzus.forEach((menzu) => {
@@ -971,7 +977,8 @@
     return hasDuplicate.size == 1
   }
 
-  const checkChanfuYaku = function (ctx, comp) {
+  //7 场风
+  const checkYaku7 = function (ctx, comp) {
     for (let menzu of comp.menzus) {
       if (menzu.has(ctx.chanfu)) {
         return true
@@ -980,7 +987,8 @@
     return false
   }
 
-  const checkJifuYaku = function (ctx, comp) {
+  //8 自风
+  const checkYaku8 = function (ctx, comp) {
     for (let menzu of comp.menzus) {
       if (menzu.has(ctx.jifu)) {
         return true
@@ -989,7 +997,8 @@
     return false
   }
 
-  const checkHakuYaku = function (ctx, comp) {
+  //9 白
+  const checkYaku9 = function (ctx, comp) {
     for (let menzu of comp.menzus) {
       if (menzu.has(new Card(1, 'y'))) {
         return true
@@ -998,7 +1007,8 @@
     return false
   }
 
-  const checkHatsuYaku = function (ctx, comp) {
+  //10 发
+  const checkYaku10 = function (ctx, comp) {
     for (let menzu of comp.menzus) {
       if (menzu.has(new Card(2, 'y'))) {
         return true
@@ -1007,7 +1017,8 @@
     return false
   }
 
-  const checkChunYaku = function (ctx, comp) {
+  //11 中
+  const checkYaku11 = function (ctx, comp) {
     for (let menzu of comp.menzus) {
       if (menzu.has(new Card(3, 'y'))) {
         return true
@@ -1016,7 +1027,8 @@
     return false
   }
 
-  const checkHaiteiYaku = function (ctx) {
+  //12 海底
+  const checkYaku12 = function (ctx) {
     if (!ctx.haitei) {
       return false
     }
@@ -1026,7 +1038,8 @@
     return true
   }
 
-  const checkHoteiYaku = function (ctx) {
+  //13 河底
+  const checkYaku13 = function (ctx) {
     if (!ctx.hotei) {
       return false
     }
@@ -1039,7 +1052,8 @@
     return true
   }
 
-  const checkChankanYaku = function (ctx) {
+  //14 抢杠
+  const checkYaku14 = function (ctx) {
     if (!ctx.chankan) {
       return false
     }
@@ -1049,7 +1063,8 @@
     return true
   }
 
-  const checkLinshanYaku = function (ctx) {
+  //15 岭上
+  const checkYaku15 = function (ctx) {
     if (!ctx.linshan) {
       return false
     }
@@ -1064,7 +1079,8 @@
     throw '岭上需要副露存在杠'
   }
 
-  const checkWRiichiYaku = function (ctx) {
+  //16 w立
+  const checkYaku16 = function (ctx) {
     if (!ctx.wriichi) {
       return false
     }
@@ -1078,7 +1094,8 @@
     return true
   }
 
-  const checkChiduiziYaku = function (ctx, comp) {
+  //17 七对
+  const checkYaku17 = function (ctx, comp) {
     if (comp.duizis.length !== 7) {
       return false
     }
@@ -1093,7 +1110,8 @@
     return true
   }
 
-  const checkIchiYaku = function (ctx, comp) {
+  //18 一气
+  const checkYaku18 = function (ctx, comp) {
     var dict = {}
     for (let type in type2size) {
       dict[type] = new Set()
@@ -1113,7 +1131,8 @@
     return false
   }
 
-  const checkSansetongshunYaku = function (ctx, comp) {
+  //19 三色同顺
+  const checkYaku19 = function (ctx, comp) {
     var m = new Map()
     for (let menzu of comp.menzus) {
       if (!menzu.shunzi) {
@@ -1131,7 +1150,8 @@
     return false
   }
 
-  const checkHunquanYaku = function (ctx, comp) {
+  //20 混全
+  const checkYaku20 = function (ctx, comp) {
     var flagCharacter = false
     var checkFunc = function (menzu) {
       if (!Is19Menzu(menzu)) {
@@ -1157,7 +1177,8 @@
     return flagCharacter
   }
 
-  const checkSansetongkeYaku = function (ctx, comp) {
+  //21 三色同刻
+  const checkYaku21 = function (ctx, comp) {
     var m = new Map()
     for (let menzu of comp.menzus) {
       if (!menzu.kezi || IsCharacterType(menzu.type)) {
@@ -1175,7 +1196,8 @@
     return false
   }
 
-  const checkSanankeYaku = function (ctx, comp) {
+  //22 三暗刻
+  const checkYaku22 = function (ctx, comp) {
     var cnt = 0
     comp.menzus.forEach((menzu) => {
       if (menzu.ura && menzu.kezi) {
@@ -1185,7 +1207,8 @@
     return cnt === 3
   }
 
-  const checkDuiduihoYaku = function (ctx, comp) {
+  //23 对对和
+  const checkYaku23 = function (ctx, comp) {
     for (let menzu of comp.menzus) {
       if (!menzu.kezi) {
         return false
@@ -1194,7 +1217,8 @@
     return true
   }
 
-  const checkShaosanyuanYaku = function (ctx, comp) {
+  //24 小三元
+  const checkYaku24 = function (ctx, comp) {
     var mCnt = 0,
       dCnt = 0
     comp.menzus.forEach((menzu) => {
@@ -1210,7 +1234,8 @@
     return cnt === 2 && dCnt === 1
   }
 
-  const checkHunlaotoYaku = function (ctx, comp) {
+  //25 混老头
+  const checkYaku25 = function (ctx, comp) {
     var flagCharacter = false
     var checkFunc = function (menzu) {
       if (!menzu.kezi && !menzu.duizi && !Is19Menzu(menzu)) {
@@ -1236,7 +1261,8 @@
     return flagCharacter
   }
 
-  const checkGokushiYaku = function (ctx) {
+  //27 国士
+  const checkYaku27 = function (ctx) {
     if (ctx.fuuro.length > 0) {
       return false
     }
@@ -1275,10 +1301,11 @@
     return Is19(agariCard) || IsCharacterCard(agariCard)
   }
 
-  const checkGokushiJusanmachiYakuWithTenho = function (ctx) {
+  //38 国士十三面
+  const checkYaku38 = function (ctx) {
     return (
       checkGokushiJusanmachiYaku(ctx) ||
-      (checkGokushiYaku(ctx) && ctx.tenho === true)
+      (checkYaku27(ctx) && ctx.tenho === true)
     )
   }
 </script>
