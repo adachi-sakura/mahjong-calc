@@ -933,12 +933,12 @@
     if (agariType !== AgariType.LiangMian) {
       return false
     }
-    for (menzu of comp.menzus) {
+    for (let menzu of comp.menzus) {
       if (menzu.shunzi === false) {
         return false
       }
     }
-    for (duizi of comp.duizis) {
+    for (let duizi of comp.duizis) {
       if (
         _.first(duizi).name() === ctx.chanfu ||
         _.first(duizi).name() === ctx.jifu
@@ -1556,7 +1556,7 @@
   const checkYaku45 = function (ctx, comp) {
     var type = null,
       dict = new Map()
-    for (card of ctx.tehai) {
+    for (let card of ctx.tehai) {
       if (IsCharacterCard(card)) return false
       if (type != null && type !== card.type) return false
       type = card.type
