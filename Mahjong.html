@@ -148,7 +148,7 @@
     this.lastDazi = null
   }
 
-  Composition.prototype.Lint = function (fuuro, isTsumo) {
+  Composition.prototype.lint = function (fuuro, isTsumo) {
     this.menzus = this.menzus.concat(fuuro)
     this.lastDazi.ura = isTsumo
   }
@@ -1241,7 +1241,7 @@
         dCnt++
       }
     })
-    return cnt === 2 && dCnt === 1
+    return mCnt === 2 && dCnt === 1
   }
 
   //25 混老头
@@ -1430,7 +1430,7 @@
       if (!checkCard(menzu)) return false
     }
     for (let duizi of comp.duizis) {
-      if (!checkCardsNum(duizi)) return false
+      if (!checkCard(duizi)) return false
     }
     return true
   }
@@ -1537,7 +1537,7 @@
     comp.menzus.forEach((menzu) => {
       if (menzu.type === 'f') cnt++
     })
-    return mCnt === 4
+    return cnt === 4
   }
 
   //44 四暗刻单骑
