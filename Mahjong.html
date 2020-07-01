@@ -42,7 +42,10 @@
 
   function Card(val, type) {
     'use strict'
-    console.assert(type2size.hasOwnProperty(type), 'type invalid')
+    console.assert(
+      Object.prototype.hasOwnProperty.call(type2size, type),
+      'type invalid'
+    )
     console.assert((type != 'f' && type != 'y') || val != 0, 'aka invalid')
     console.assert(val >= 0 && val <= type2size[type], 'value invalid')
     this.value = val === 0 ? 5 : val
