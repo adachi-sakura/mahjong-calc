@@ -881,6 +881,18 @@
     return RangeBetween(0, end - 1)
   }
 
+  function checkChiduiAgari(comp) {
+    return new YakuMetaRequirement(0, 7).Validate(comp)
+  }
+
+  function checkClassicAgari(comp) {
+    return new YakuMetaRequirement(4, 1).Validate(comp)
+  }
+
+  function CheckComposition(comp) {
+    return checkClassicAgari(comp) || checkChiduiAgari(comp)
+  }
+
   //1 立直
   const checkYaku1 = function (ctx) {
     if (!ctx.riichi) {
