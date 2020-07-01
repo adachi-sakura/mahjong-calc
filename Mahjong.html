@@ -63,11 +63,21 @@
   }
 
   Card.prototype.IsPrev = function (card) {
-    return card && this.type === card.type && this.value + 1 === card.value
+    return (
+      card &&
+      this.type === card.type &&
+      IsCharacterType(this.type) &&
+      this.value + 1 === card.value
+    )
   }
 
   Card.prototype.IsNext = function (card) {
-    return card && this.type === card.type && this.value - 1 === card.value
+    return (
+      card &&
+      this.type === card.type &&
+      IsCharacterType(this.type) &&
+      this.value - 1 === card.value
+    )
   }
 
   function Menzu() {
