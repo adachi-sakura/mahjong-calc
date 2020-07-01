@@ -159,38 +159,22 @@
     if (len < 3 || len > 4) {
       return false
     }
-    for (
-      let i = 1, pre = menzu[i - 1], cur = menzu[i];
-      i < len;
-      i++, pre = menzu[i - 1], cur = menzu[i]
-    ) {
-      if (pre.score != cur.score) {
-        return false
-      }
-    }
-    return true
+    var s = new Set()
+    menzu.forEach((card) => s.add(card.score))
+    return s.size === 1
   }
 
   function Kanzi(menzu) {
     return menzu.length === 4 && Kezi(menzu)
   }
 
-  //should be sorted
   function Shunzi(menzu) {
     var len = menzu.length
     if (len != 3) {
       return false
     }
-    for (
-      let i = 1, pre = menzu[i - 1], cur = menzu[i];
-      i < len;
-      i++, pre = menzu[i - 1], cur = menzu[i]
-    ) {
-      if (pre.type != cur.type || pre.value + 1 != cur.value) {
-        return false
-      }
-    }
-    return true
+
+    return menzu[0].IsPrev(menzu[1]) && menzu[1].IsPrev(menzu[2])
   }
 
   function Duizi(dazi) {
