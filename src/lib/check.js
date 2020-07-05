@@ -5,16 +5,24 @@ import { JudgeAgariType, AgariType } from './agari'
 import { type2size, IsCharacterType } from './type'
 import { Kanzi, Is19Menzu } from './menzu'
 
-function checkChiduiAgari(comp) {
-  return new YakuMetaRequirement(0, 7).Validate(comp)
+function checkChiduiAgari(ctx, comp) {
+  return checkYaku17(ctx, comp)
 }
 
-function checkClassicAgari(comp) {
+function checkGokushiAgari(ctx) {
+  return checkYaku31(ctx) || checkYaku42(ctx)
+}
+
+function CheckExceptionalAgari(ctx, comp) {
+  return checkChiduiAgari(ctx, comp) || checkGokushiAgari(ctx)
+}
+
+function CheckClassicalAgari(comp) {
   return new YakuMetaRequirement(4, 1).Validate(comp)
 }
 
-function CheckComposition(comp) {
-  return checkClassicAgari(comp) || checkChiduiAgari(comp)
+function CheckComposition(ctx, comp) {
+  return CheckClassicalAgari(comp) || CheckExceptionalAgari(ctx, comp)
 }
 
 const CheckFuncMap = {
@@ -733,4 +741,4 @@ const checkYaku45 = function(ctx) {
   return dict.size === 9 && type === ctx.agariCard.type
 }
 
-export { CheckComposition }
+export { CheckComposition, CheckFuncMap, CheckExceptionalAgari }
