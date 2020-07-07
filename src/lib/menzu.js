@@ -1,4 +1,4 @@
-import Is19 from './card'
+import { Is19, Card } from './card'
 
 class Menzu {
   constructor() {
@@ -25,6 +25,21 @@ class Menzu {
     var ret = ''
     this.cards.forEach(card => (ret += card.score.toString()))
     return ret
+  }
+
+  static fromString(strArr, isUra) {
+    var newMenzu = new Menzu()
+    strArr.forEach(cardStr => {
+      newMenzu.cards.push(Card.fromString(cardStr))
+    })
+    newMenzu.cards.sort((a, b) => a.score - b.score)
+    try {
+      newMenzu.generate(isUra)
+    } catch (err) {
+      return null
+    }
+
+    return newMenzu
   }
 
   has(target) {
