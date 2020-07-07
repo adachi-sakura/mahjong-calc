@@ -58,6 +58,16 @@ class Card {
       this.value - 1 === card.value
     )
   }
+
+  static fromString(str) {
+    if (str.length !== 2) return null
+    var val = str.charAt(0),
+      type = str.charAt(1)
+    if (!Object.prototype.hasOwnProperty.call(type2size, type)) return null
+    if (val < 0 || val > type2size[type]) return null
+    if (IsCharacterType(type) && val === 0) return null
+    return new Card(val, type)
+  }
 }
 
 function Name(val, type) {
