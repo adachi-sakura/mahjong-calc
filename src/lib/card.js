@@ -60,12 +60,13 @@ class Card {
   }
 
   static fromString(str) {
-    if (str.length !== 2) return null
+    if (str.length !== 2) throw 'invalid string'
     var val = str.charAt(0),
       type = str.charAt(1)
-    if (!Object.prototype.hasOwnProperty.call(type2size, type)) return null
-    if (val < 0 || val > type2size[type]) return null
-    if (IsCharacterType(type) && val === 0) return null
+    if (!Object.prototype.hasOwnProperty.call(type2size, type))
+      throw 'invalid string'
+    if (val < 0 || val > type2size[type]) throw 'invalid string'
+    if (IsCharacterType(type) && val === 0) throw 'invalid string'
     return new Card(val, type)
   }
 }

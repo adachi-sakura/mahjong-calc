@@ -33,11 +33,7 @@ class Menzu {
       newMenzu.cards.push(Card.fromString(cardStr))
     })
     newMenzu.cards.sort((a, b) => a.score - b.score)
-    try {
-      newMenzu.generate(isUra)
-    } catch (err) {
-      return null
-    }
+    newMenzu.generate(isUra)
 
     return newMenzu
   }
