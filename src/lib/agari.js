@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import type2size from './type'
+import { type2size } from './type'
 
 const AgariType = {
   LiangMian: 0,

@@ -1,7 +1,7 @@
-import Context from './context'
-import Card from './card'
-import Menzu from './menzu'
-import InsertCard from './util'
+import { Context } from './context'
+import { Card } from './card'
+import { Menzu } from './menzu'
+import { InsertCard } from './util'
 
 function NewContext(tehai, fuuro, agari) {
   var ctx = new Context()

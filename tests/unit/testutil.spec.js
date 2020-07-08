@@ -1,4 +1,4 @@
-import NewContext from '../../src/lib/testutil'
+import { NewContext } from '../../src/lib/testutil'
 
 describe('New Context test', () => {
   it('create right context', () => {

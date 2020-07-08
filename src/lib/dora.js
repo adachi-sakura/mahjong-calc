@@ -1,5 +1,5 @@
-import type2size from './type'
-import Card from './card'
+import { type2size } from './type'
+import { Card } from './card'
 
 function IsDora(target, indicate) {
   if (indicate.type != target.type) {

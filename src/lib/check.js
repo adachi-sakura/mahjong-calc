@@ -1,4 +1,4 @@
-import YakuMetaRequirement from './yaku'
+import { YakuMetaRequirement } from './yaku'
 import _ from 'lodash'
 import { Card, Is19, IsCharacterCard } from './card'
 import { JudgeAgariType, AgariType } from './agari'

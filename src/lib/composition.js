@@ -1,7 +1,7 @@
 import _ from 'lodash'
-import InsertCard from './util'
-import CardsStatus from './cardsStatus'
-import Menzu from './menzu'
+import { InsertCard } from './util'
+import { CardsStatus } from './cardsStatus'
+import { Menzu } from './menzu'
 
 class Composition {
   constructor() {
