@@ -5,6 +5,7 @@ class Context {
     this.agariCard = {}
     this.jifu = {}
     this.chanfu = {}
+    this.menzen = true
     this.tsumo = false
     this.riichi = false
     this.wriichi = false
@@ -15,6 +16,23 @@ class Context {
     this.linshan = false
     this.tenho = false
     this.chiho = false
+  }
+
+  Update() {
+    this.menzen = this.isMenzen()
+  }
+
+  isMenzen() {
+    if (this.fuuro.length === 0) {
+      return true
+    }
+    for (let menzu of this.fuuro) {
+      if (menzu.ura === false) {
+        return false
+      }
+    }
+
+    return true
   }
 }
 

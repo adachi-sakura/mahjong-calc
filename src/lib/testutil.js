@@ -16,6 +16,7 @@ function NewContext(tehai, fuuro, agari) {
     fuuro.forEach(menzuStr => {
       fuuroArr.push(Menzu.fromString(menzuStr, false))
     })
+    ctx.Update()
     return ctx
   } catch (err) {
     return null
